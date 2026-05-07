@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - Traffic Logic Game</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .levels-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .level-card {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .level-card:hover {
+            border-color: #ff6b6b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .level-card.active {
+            border-color: #ff6b6b;
+            background: #fff5f5;
+        }
+        
+        .level-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .level-card p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        
+        .btn-primary {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #ff4c4c;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .btn.active {
+            background: #1565c0;
+            color: white;
+        }
+        .path-editor-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .path-editor-toolbar label { margin-left: 8px; }
+        
+        .editor-panel {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        
+        .editor-panel.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .cars-section {
+            margin-top: 30px;
+        }
+        
+        .car-item {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .car-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .car-item-header h4 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .path-editor {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 2px solid #dee2e6;
+        }
+        
+        .path-type {
+            margin-bottom: 15px;
+        }
+        
+        .path-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .path-controls input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        .solution-section {
+            margin-top: 30px;
+        }
+        
+        .solution-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .solution-item select,
+        .solution-item input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .canvas-container {
+            position: relative;
+            margin-top: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+        
+        #pathCanvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .canvas-controls {
+            padding: 10px;
+            background: white;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .canvas-controls button {
+            margin-right: 10px;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-right: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state h2 {
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 פאנל ניהול - משחק תנועה</h1>
+            <p>ניהול שלבים, מכוניות ומסלולים</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-box" style="background: #e8f5e9; border-right-color: #4caf50;">
+                <strong>📌 איך זה עובד</strong><br>
+                <b>בשרת (עם PHP):</b> השלבים ב־<b>levels.json</b>. לחיצה על שמור מעדכנת דרך <b>save-levels.php</b>.<br>
+                <b>בבדיקות מקומיות (python / בלי PHP):</b> שמירה נשמרת <b>בדפדפן</b> – פתחי את המשחק <b>באותו דומיין</b> (למשל localhost:8000) ורענני – תראי את השינויים.
+            </div>
+            
+            <div class="actions-bar">
+                <div>
+                    <button class="btn btn-success" onclick="addNewLevel()">➕ הוסף שלב חדש</button>
+                    <button class="btn btn-primary" onclick="saveLevels()">💾 שמור</button>
+                    <label class="btn btn-secondary" style="margin:0;">📥 ייבוא מקובץ <input type="file" accept=".json" onchange="importLevelsJson(event)" style="display:none;"></label>
+                </div>
+                <div id="save-status" style="color: #28a745; font-weight: bold; display: none;">✓ נשמר בהצלחה!</div>
+                <div id="save-error" style="color: #c62828; font-weight: bold; display: none;"></div>
+            </div>
+            
+            <div class="info-box">
+                <strong>💡 הוראות:</strong><br>
+                • לחץ על כרטיס שלב לעריכה<br>
+                • הוסף/מחק מכוניות וקבע את מיקומן<br>
+                • הגדר מסלולים לכל מכונית (ישר, שמאל, ימין)<br>
+                • הגדר את סדר הפתרון הנכון<br>
+                • שמור את השינויים לפני יציאה
+            </div>
+            
+            <div id="levels-container" class="levels-list"></div>
+            
+            <div id="editor-panel" class="editor-panel">
+                <h2>עריכת שלב <span id="editing-level-id"></span></h2>
+                
+                <div class="form-group">
+                    <label>מספר שלב (ID):</label>
+                    <input type="number" id="level-id" min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label>הוראות לשלב:</label>
+                    <textarea id="level-instruction" placeholder="לדוגמה: לרכב האדום יש תמרור 'תן זכות קדימה'..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>תמונת רקע (צומת):</label>
+                    <input type="text" id="level-bg-image" placeholder="images/background-junction.png" title="כל שלב יכול תמונה אחרת. העלי את הקובץ לתיקיית images והזיני למשל: images/צומת-2.png">
+                    <small style="display:block; margin-top:4px; color:#666;">כל שלב יכול צומת אחרת – הזיני נתיב לקובץ מתיקיית images (למשל images/background-junction.png או images/צומת-תמרור.png)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>תמונת פתרון:</label>
+                    <input type="text" id="level-solution-image" placeholder="images/solution-screen.png">
+                    <small style="display:block; margin-top:4px; color:#666;">תמונת פתרון שונה לכל שלב – מוצגת אחרי שהשחקן מסיים (נכון או לא). הזיני נתיב מתיקיית images (למשל images/solution-screen.png או images/פתרון-שלב-2.png)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>טקסט טעות (אם נכשל):</label>
+                    <textarea id="level-error-text" placeholder="בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>טקסט פתרון (אם נכון):</label>
+                    <textarea id="level-solution-text" placeholder="נכון מאוד! הרכב האדום נכנס ראשון..."></textarea>
+                </div>
+                
+                <div class="cars-section">
+                    <h3>🚗 מכוניות</h3>
+                    <button class="btn btn-success" onclick="addCar()">➕ הוסף מכונית</button>
+                    <div id="cars-list"></div>
+                </div>
+                
+                <div class="visual-path-editor" style="margin-top:20px;">
+                    <h3>🗺️ עורך ויזואלי – מיקום ומסלולים</h3>
+                    <p style="color:#666; font-size:14px;">לחצי על התמונה כדי להגדיר מיקום התחלה של מכונית או נקודות למסלול. המפה באותו גודל כמו במשחק (800×600).</p>
+                    <div class="path-editor-toolbar">
+                        <label>מכונית:</label>
+                        <select id="path-editor-car">
+                            <option value="">בחרי מכונית</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" id="btn-set-position">📍 הגדר מיקום התחלה</button>
+                        <label style="margin-right:6px;">כיוון (זווית):</label>
+                        <select id="path-editor-angle" title="כיוון המכונית במעלות (0=למעלה, 90=ימין, -90=שמאל, 180=למטה)">
+                            <option value="0">0° (למעלה)</option>
+                            <option value="90">90° (ימין)</option>
+                            <option value="-90">-90° (שמאל)</option>
+                            <option value="180">180° (למטה)</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" id="btn-path-straight">➡️ מסלול ישר (2 לחיצות)</button>
+                        <button type="button" class="btn btn-secondary" id="btn-path-left">↩️ מסלול שמאל (לחיצות לאורך הדרך)</button>
+                        <button type="button" class="btn btn-secondary" id="btn-path-right">↪️ מסלול ימין (לחיצות לאורך הדרך)</button>
+                        <button type="button" class="btn btn-secondary" id="btn-path-clear" style="display:none;">🗑 נקה ונבטל</button>
+                        <span id="path-editor-hint" style="margin-right:10px; color:#666;"></span>
+                    </div>
+                    <div class="path-editor-map-wrap" style="position:relative; max-width:800px; aspect-ratio: 800/600; background:#333;">
+                        <img id="path-editor-bg" alt="רקע צומת" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain;">
+                        <canvas id="path-editor-canvas" width="800" height="600" style="position:absolute; inset:0; width:100%; height:100%; cursor:crosshair;"></canvas>
+                    </div>
+                </div>
+                
+                <div class="solution-section">
+                    <h3>✅ סדר פתרון נכון</h3>
+                    <button class="btn btn-success" onclick="addSolutionStep()">➕ הוסף צעד</button>
+                    <div id="solution-list"></div>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="saveCurrentLevel()">💾 שמור שלב זה</button>
+                    <button class="btn btn-secondary" onclick="cancelEdit()">❌ ביטול</button>
+                    <button class="btn btn-danger" onclick="deleteCurrentLevel()">🗑️ מחק שלב זה</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let levels = [];
+        let currentEditingIndex = -1;
+        
+        // טעינה: קודם levels.json (בשרת), אחר כך localStorage (בדיקות מקומיות), אחר כך ברירת מחדל
+        async function loadLevels() {
+            try {
+                const r = await fetch('levels.json');
+                if (r.ok) {
+                    const data = await r.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        levels = data;
+                        renderLevelsList();
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('No levels.json, trying localStorage');
+            }
+            try {
+                const saved = localStorage.getItem('carGameLevels');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    if (Array.isArray(data) && data.length > 0) {
+                        levels = data;
+                        renderLevelsList();
+                        return;
+                    }
+                }
+            } catch (e) {}
+            loadDefaultLevels();
+            renderLevelsList();
+        }
+        
+        function loadDefaultLevels() {
+            // שלבים ברירת מחדל - 8 שלבים עם הטקסטים החדשים
+            // שים לב: שלבים אלו זהים לאלה ב-index.html
+            levels = [
+                {
+                    id: 1,
+                    instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
+                    errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                    solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, נותן זכות קדימה לרכב הבא ממול ולרכב הבא מימין. הרכב הכחול נותן זכות קדימה לבא מימין. ולכן הרכב האדום נכנס ראשון לצומת",
+                    bgImage: "images/background1.png",
+                    solutionImage: "images/solution1.png",
+                    cars: [
+                        { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                        { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                        { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                    ],
+                    paths: {
+                        red: {
+                            straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                            left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                            right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                        },
+                        yellow: {
+                            straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                            left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                            right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                        },
+                        blue: {
+                            straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                            left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                            right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                        }
+                    },
+                    solution: [
+                        { color: 'red', direction: 'straight' },
+                        { color: 'blue', direction: 'straight' },
+                        { color: 'yellow', direction: 'left' }
+                    ]
+                },
+                {
+                    id: 2,
+                    instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
+                    errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                    solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, נותן זכות קדימה לרכב הבא ממול ולרכב הבא מימין. הרכב הכחול נותן זכות קדימה לבא מימין. ולכן הרכב האדום נכנס ראשון לצומת",
+                    bgImage: "images/background2.png",
+                    solutionImage: "images/solution2.png",
+                    cars: [
+                        { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                        { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                        { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                    ],
+                    paths: {
+                        red: {
+                            straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                            left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                            right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                        },
+                        yellow: {
+                            straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                            left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                            right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                        },
+                        blue: {
+                            straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                            left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                            right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                        }
+                    },
+                    solution: [
+                        { color: 'red', direction: 'straight' },
+                        { color: 'blue', direction: 'straight' },
+                        { color: 'yellow', direction: 'left' }
+                    ]
+                },
+                {
+                    id: 3,
+                    instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
+                    errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                    solutionText: "נכון מאוד! המשאית, המעוניינת לסוע ישר, צריכה לתת זכות קדימה לרכב הבא מימין. ולכן הרכב הכחול נכנס ראשון לצומת",
+                    bgImage: "images/background3.png",
+                    solutionImage: "images/solution3.png",
+                    cars: [
+                        { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                        { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                        { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                    ],
+                    paths: {
+                        red: {
+                            straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                            left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                            right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                        },
+                        yellow: {
+                            straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                            left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                            right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                        },
+                        blue: {
+                            straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                            left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                            right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                        }
+                    },
+                    solution: [
+                        { color: 'blue', direction: 'straight' },
+                        { color: 'red', direction: 'straight' },
+                        { color: 'yellow', direction: 'straight' }
+                    ]
+                },
+                {
+                    id: 4,
+                    instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
+                    errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                    solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, צריך לתת זכות קדימה לרכב הבא מימין. לכן הרכב הכחול נכנס ראשון לצומת",
+                    bgImage: "images/background4.png",
+                    solutionImage: "images/solution4.png",
+                    cars: [
+                        { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                        { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                        { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                    ],
+                    paths: {
+                        red: {
+                            straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                            left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                            right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                        },
+                        yellow: {
+                            straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                            left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                            right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                        },
+                        blue: {
+                            straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                            left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                            right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                        }
+                    },
+                    solution: [
+                        { color: 'blue', direction: 'straight' },
+                        { color: 'yellow', direction: 'left' },
+                        { color: 'red', direction: 'straight' }
+                    ]
+                },
+                {
+                    id: 5,
+                    instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
+                    errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                    solutionText: "נכון מאוד! לרכב האדום יש תמרור 'תן זכות קדימה', לכן הוא חייב לתת זכות קדימה לכל מי שרוצה להכנס לצומת לפניו. ולכן הרכב הצהוב נכנס ראשון לצומת",
+                    bgImage: "images/background5.png",
+                    solutionImage: "images/solution5.png",
+                    cars: [
+                        { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                        { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                        { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                    ],
+                    paths: {
+                        red: {
+                            straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                            left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                            right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                        },
+                        yellow: {
+                            straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                            left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                            right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                        },
+                        blue: {
+                            straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                            left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                            right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                        }
+                    },
+                    solution: [
+                        { color: 'yellow', direction: 'straight' },
+                        { color: 'red', direction: 'straight' },
+                        { color: 'blue', direction: 'straight' }
+                    ]
+                },
+                {
+                    id: 6,
+                    instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
+                    errorText: "אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                    solutionText: "נכון מאוד! הרכב הצהוב פונה מחד סטרי אל חד סטרי, לכן הוא יצמד לשמאל ויפנה מהנתיב השמאלי אל הנתיב השמאלי. הרכב האדום פונה מדו סטרי אל דו סטרי, לכן יפנה שמאלה בהצמדות לימין, מהנתיב הימני אל הנתיב הימני.",
+                    bgImage: "images/background6.png",
+                    solutionImage: "images/solution6.png",
+                    cars: [
+                        { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                        { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 }
+                    ],
+                    paths: {
+                        red: {
+                            left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] }
+                        },
+                        yellow: {
+                            left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] }
+                        }
+                    },
+                    solution: [
+                        { color: 'red', direction: 'left' },
+                        { color: 'yellow', direction: 'left' }
+                    ]
+                },
+                {
+                    id: 7,
+                    instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
+                    errorText: "אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                    solutionText: "נכון מאוד! הרכב הצהוב פונה מדו סטרי אל דו סטרי, לכן יפנה שמאלה בהצמדות לימין, מהנתיב הימני אל הנתיב הימני. הרכב האדום פונה מדו סטרי אל חד סטרי, לכן יפנה מהנתיב הימני אל הנתיב השמאלי.",
+                    bgImage: "images/background7.png",
+                    solutionImage: "images/solution7.png",
+                    cars: [
+                        { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                        { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 }
+                    ],
+                    paths: {
+                        red: {
+                            left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] }
+                        },
+                        yellow: {
+                            left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] }
+                        }
+                    },
+                    solution: [
+                        { color: 'yellow', direction: 'left' },
+                        { color: 'red', direction: 'left' }
+                    ]
+                },
+                {
+                    id: 8,
+                    instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
+                    errorText: "אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                    solutionText: "נכון מאוד! הרכב הצהוב פונה מדו סטרי אל חד סטרי, מאחר וזה כביש שיש בו שטח הפרדה, לכן יפנה מהנתיב הימני אל הנתיב השמאלי.",
+                    bgImage: "images/background8.png",
+                    solutionImage: "images/solution8.png",
+                    cars: [
+                        { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                        { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 }
+                    ],
+                    paths: {
+                        red: {
+                            left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] }
+                        },
+                        yellow: {
+                            left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] }
+                        }
+                    },
+                    solution: [
+                        { color: 'yellow', direction: 'left' },
+                        { color: 'red', direction: 'left' }
+                    ]
+                }
+            ];
+        }
+        
+        function renderLevelsList() {
+            const container = document.getElementById('levels-container');
+            if (levels.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h2>אין שלבים עדיין</h2><p>לחץ על "הוסף שלב חדש" כדי להתחיל</p></div>';
+                return;
+            }
+            
+            container.innerHTML = levels.map((level, index) => `
+                <div class="level-card ${index === currentEditingIndex ? 'active' : ''}" onclick="editLevel(${index})">
+                    <h3>שלב ${level.id}</h3>
+                    <p><strong>הוראות:</strong> ${level.instruction.substring(0, 50)}${level.instruction.length > 50 ? '...' : ''}</p>
+                    <p><strong>מכוניות:</strong> ${level.cars.length}</p>
+                    <p><strong>צעדי פתרון:</strong> ${level.solution.length}</p>
+                </div>
+            `).join('');
+        }
+        
+        function editLevel(index) {
+            currentEditingIndex = index;
+            const level = levels[index];
+            
+            document.getElementById('level-id').value = level.id;
+            document.getElementById('level-instruction').value = level.instruction || '';
+            document.getElementById('level-bg-image').value = level.bgImage || '';
+            document.getElementById('level-solution-image').value = level.solutionImage || '';
+            document.getElementById('level-error-text').value = level.errorText || '';
+            document.getElementById('level-solution-text').value = level.solutionText || '';
+            document.getElementById('editing-level-id').textContent = level.id;
+            
+            renderCarsList();
+            renderSolutionList();
+            initPathEditor(level);
+            
+            document.getElementById('editor-panel').classList.add('active');
+            renderLevelsList();
+        }
+        
+        let pathEditorMode = null;
+        let pathEditorPoints = [];
+        let pathEditorPathDir = 'left';
+        
+        function initPathEditor(level) {
+            const bgEl = document.getElementById('path-editor-bg');
+            const carSelect = document.getElementById('path-editor-car');
+            bgEl.src = level.bgImage || 'images/background1.png';
+            carSelect.innerHTML = '<option value="">בחרי מכונית</option>' +
+                level.cars.map((c, i) => `<option value="${i}">${c.id} (${c.texture})</option>`).join('');
+            pathEditorMode = null;
+            pathEditorPoints = [];
+            document.getElementById('btn-path-clear').style.display = 'none';
+            document.getElementById('path-editor-hint').textContent = '';
+            document.getElementById('btn-set-position').classList.remove('active');
+            document.getElementById('btn-path-straight').classList.remove('active');
+            document.getElementById('btn-path-left').classList.remove('active');
+            document.getElementById('btn-path-right').classList.remove('active');
+            drawPathEditorCanvas();
+            bindPathEditorEvents();
+            syncPathEditorAngleFromCar();
+        }
+        function syncPathEditorAngleFromCar() {
+            const carSelect = document.getElementById('path-editor-car');
+            const angleSelect = document.getElementById('path-editor-angle');
+            const level = levels[currentEditingIndex];
+            if (!angleSelect || !level || !carSelect || carSelect.value === '') return;
+            const carIndex = parseInt(carSelect.value, 10);
+            if (carIndex < 0 || carIndex >= level.cars.length) return;
+            const car = level.cars[carIndex];
+            const a = String(car.angle ?? 0);
+            if (angleSelect.value !== a) angleSelect.value = a;
+        }
+        
+        function getPathEditorCoords(e) {
+            const canvas = document.getElementById('path-editor-canvas');
+            const r = canvas.getBoundingClientRect();
+            const x = ((e.clientX - r.left) / r.width) * 800;
+            const y = ((e.clientY - r.top) / r.height) * 600;
+            return [Math.round(x), Math.round(y)];
+        }
+        
+        function drawPathEditorCanvas() {
+            const canvas = document.getElementById('path-editor-canvas');
+            const ctx = canvas.getContext('2d');
+            const level = levels[currentEditingIndex];
+            if (!level) return;
+            ctx.clearRect(0, 0, 800, 600);
+            const carColors = { red: '#e53935', yellow: '#fdd835', blue: '#1e88e5', grey: '#757575' };
+            level.cars.forEach((car, i) => {
+                ctx.fillStyle = carColors[car.texture] || '#888';
+                ctx.beginPath();
+                ctx.arc(car.x, car.y, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(car.id, car.x, car.y + 4);
+            });
+            if (level.paths) {
+                ctx.strokeStyle = 'rgba(0,255,0,0.7)';
+                ctx.lineWidth = 3;
+                for (const carId of Object.keys(level.paths)) {
+                    for (const dir of Object.keys(level.paths[carId])) {
+                        const p = level.paths[carId][dir];
+                        if (!p) continue;
+                        ctx.beginPath();
+                        if (p.type === 'line') {
+                            ctx.moveTo(p.start[0], p.start[1]);
+                            ctx.lineTo(p.end[0], p.end[1]);
+                        } else if (p.type === 'spline' && p.points && p.points.length >= 2) {
+                            ctx.moveTo(p.start[0], p.start[1]);
+                            for (let i = 0; i + 1 < p.points.length; i += 2) {
+                                ctx.lineTo(p.points[i], p.points[i + 1]);
+                            }
+                        } else if (p.type === 'curve' && p.p1) {
+                            ctx.moveTo(p.start[0], p.start[1]);
+                            ctx.quadraticCurveTo(p.p1[0], p.p1[1], p.end[0], p.end[1]);
+                        }
+                        ctx.stroke();
+                    }
+                }
+            }
+            if (pathEditorPoints.length > 0) {
+                ctx.fillStyle = '#ff9800';
+                pathEditorPoints.forEach((pt, i) => {
+                    ctx.beginPath();
+                    ctx.arc(pt[0], pt[1], 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.stroke();
+                });
+                if (pathEditorPoints.length >= 2) {
+                    ctx.strokeStyle = '#ff9800';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(pathEditorPoints[0][0], pathEditorPoints[0][1]);
+                    pathEditorPoints.slice(1).forEach(pt => ctx.lineTo(pt[0], pt[1]));
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+        }
+        
+        function bindPathEditorEvents() {
+            const canvas = document.getElementById('path-editor-canvas');
+            const carSelect = document.getElementById('path-editor-car');
+            const hint = document.getElementById('path-editor-hint');
+            const btnClear = document.getElementById('btn-path-clear');
+            
+            function setMode(mode) {
+                pathEditorMode = mode;
+                pathEditorPoints = [];
+                btnClear.style.display = mode ? 'inline-block' : 'none';
+                if (mode === 'position') hint.textContent = 'לחצי על המפה למיקום התחלה של המכונית';
+                else if (mode === 'line') hint.textContent = 'לחצי נקודת התחלה (או המכונית) ואז נקודת סיום';
+                else if (mode === 'spline') hint.textContent = 'לחצי נקודות לאורך המסלול (' + (pathEditorPathDir === 'left' ? 'שמאל' : 'ימין') + '). סיימי ב"נקה ונבטל" ואז "שמור שלב"';
+                else hint.textContent = '';
+                document.getElementById('btn-set-position').classList.toggle('active', mode === 'position');
+                document.getElementById('btn-path-straight').classList.toggle('active', mode === 'line');
+                document.getElementById('btn-path-left').classList.toggle('active', mode === 'spline' && pathEditorPathDir === 'left');
+                document.getElementById('btn-path-right').classList.toggle('active', mode === 'spline' && pathEditorPathDir === 'right');
+                drawPathEditorCanvas();
+            }
+            
+            document.getElementById('btn-set-position').onclick = () => {
+                if (!carSelect.value) { alert('בחרי מכונית קודם'); return; }
+                setMode('position');
+            };
+            document.getElementById('btn-path-straight').onclick = () => {
+                if (!carSelect.value) { alert('בחרי מכונית קודם'); return; }
+                setMode('line');
+            };
+            document.getElementById('btn-path-left').onclick = () => {
+                if (!carSelect.value) { alert('בחרי מכונית קודם'); return; }
+                pathEditorPathDir = 'left';
+                setMode('spline');
+            };
+            document.getElementById('btn-path-right').onclick = () => {
+                if (!carSelect.value) { alert('בחרי מכונית קודם'); return; }
+                pathEditorPathDir = 'right';
+                setMode('spline');
+            };
+            btnClear.onclick = () => setMode(null);
+            carSelect.onchange = () => { pathEditorPoints = []; setMode(null); syncPathEditorAngleFromCar(); };
+            
+            canvas.onclick = (e) => {
+                const [x, y] = getPathEditorCoords(e);
+                const level = levels[currentEditingIndex];
+                const carIndex = parseInt(carSelect.value, 10);
+                if (carIndex < 0 || !level || carIndex >= level.cars.length) return;
+                const car = level.cars[carIndex];
+                const carId = car.id;
+                if (!level.paths[carId]) level.paths[carId] = {};
+                
+                if (pathEditorMode === 'position') {
+                    car.x = x;
+                    car.y = y;
+                    const angleEl = document.getElementById('path-editor-angle');
+                    if (angleEl) car.angle = parseInt(angleEl.value, 10);
+                    setMode(null);
+                    renderCarsList();
+                    drawPathEditorCanvas();
+                    return;
+                }
+                if (pathEditorMode === 'line') {
+                    pathEditorPoints.push([x, y]);
+                    if (pathEditorPoints.length === 1) {
+                        hint.textContent = 'עכשיו לחצי נקודת סיום';
+                    } else {
+                        level.paths[carId].straight = {
+                            type: 'line',
+                            start: pathEditorPoints[0],
+                            end: pathEditorPoints[1]
+                        };
+                        setMode(null);
+                        renderCarsList();
+                    }
+                    drawPathEditorCanvas();
+                    return;
+                }
+                if (pathEditorMode === 'spline') {
+                    pathEditorPoints.push([x, y]);
+                    if (pathEditorPoints.length === 1) {
+                        hint.textContent = 'הוסיפי עוד נקודות לאורך הדרך. סיימי ב"נקה ונבטל" ואז "שמור שלב"';
+                    }
+                    if (pathEditorPoints.length >= 2) {
+                        const flat = [];
+                        pathEditorPoints.forEach(pt => { flat.push(pt[0], pt[1]); });
+                        level.paths[carId][pathEditorPathDir] = {
+                            type: 'spline',
+                            start: [pathEditorPoints[0][0], pathEditorPoints[0][1]],
+                            points: flat.slice(2)
+                        };
+                        renderCarsList();
+                    }
+                    drawPathEditorCanvas();
+                    return;
+                }
+            };
+        }
+        
+        function renderCarsList() {
+            const container = document.getElementById('cars-list');
+            const level = levels[currentEditingIndex];
+            
+            container.innerHTML = level.cars.map((car, carIndex) => `
+                <div class="car-item">
+                    <div class="car-item-header">
+                        <h4>מכונית ${carIndex + 1}: ${car.id}</h4>
+                        <button class="btn btn-danger" onclick="removeCar(${carIndex})">🗑️ מחק</button>
+                    </div>
+                    <div class="form-group">
+                        <label>מזהה (ID):</label>
+                        <input type="text" value="${car.id}" onchange="updateCar(${carIndex}, 'id', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>תמונה (texture):</label>
+                        <select onchange="updateCar(${carIndex}, 'texture', this.value)">
+                            <option value="red" ${car.texture === 'red' ? 'selected' : ''}>אדום</option>
+                            <option value="yellow" ${car.texture === 'yellow' ? 'selected' : ''}>צהוב</option>
+                            <option value="blue" ${car.texture === 'blue' ? 'selected' : ''}>כחול</option>
+                            <option value="grey" ${car.texture === 'grey' ? 'selected' : ''}>אפור</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>מיקום X:</label>
+                        <input type="number" value="${car.x}" onchange="updateCar(${carIndex}, 'x', parseInt(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label>מיקום Y:</label>
+                        <input type="number" value="${car.y}" onchange="updateCar(${carIndex}, 'y', parseInt(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label>זווית (angle):</label>
+                        <input type="number" value="${car.angle}" onchange="updateCar(${carIndex}, 'angle', parseInt(this.value))">
+                    </div>
+                    ${renderPathsEditor(car.id, carIndex)}
+                </div>
+            `).join('');
+        }
+        
+        function renderPathsEditor(carId, carIndex) {
+            const level = levels[currentEditingIndex];
+            const paths = level.paths[carId] || {};
+            
+            return `
+                <div class="path-editor">
+                    <h4>מסלולים למכונית ${carId}</h4>
+                    ${['straight', 'left', 'right'].map(dir => {
+                        const path = paths[dir];
+                        return `
+                            <div class="path-type">
+                                <label><strong>${dir === 'straight' ? 'ישר' : dir === 'left' ? 'שמאל' : 'ימין'}:</strong></label>
+                                <select onchange="updatePathType('${carId}', '${dir}', this.value)">
+                                    <option value="">ללא מסלול</option>
+                                    <option value="line" ${path && path.type === 'line' ? 'selected' : ''}>קו ישר</option>
+                                    <option value="curve" ${path && path.type === 'curve' ? 'selected' : ''}>עקומה</option>
+                                    <option value="spline" ${path && path.type === 'spline' ? 'selected' : ''}>Spline</option>
+                                </select>
+                                ${path ? renderPathControls(carId, dir, path) : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        function renderPathControls(carId, dir, path) {
+            if (path.type === 'line') {
+                return `
+                    <div class="path-controls">
+                        <div>
+                            <label>נקודת התחלה X:</label>
+                            <input type="number" value="${path.start[0]}" onchange="updatePathPoint('${carId}', '${dir}', 'start', 0, parseInt(this.value))">
+                        </div>
+                        <div>
+                            <label>נקודת התחלה Y:</label>
+                            <input type="number" value="${path.start[1]}" onchange="updatePathPoint('${carId}', '${dir}', 'start', 1, parseInt(this.value))">
+                        </div>
+                        <div>
+                            <label>נקודת סיום X:</label>
+                            <input type="number" value="${path.end[0]}" onchange="updatePathPoint('${carId}', '${dir}', 'end', 0, parseInt(this.value))">
+                        </div>
+                        <div>
+                            <label>נקודת סיום Y:</label>
+                            <input type="number" value="${path.end[1]}" onchange="updatePathPoint('${carId}', '${dir}', 'end', 1, parseInt(this.value))">
+                        </div>
+                    </div>
+                `;
+            } else if (path.type === 'curve') {
+                return `
+                    <div class="path-controls">
+                        <div>
+                            <label>נקודת התחלה X:</label>
+                            <input type="number" value="${path.start[0]}" onchange="updatePathPoint('${carId}', '${dir}', 'start', 0, parseInt(this.value))">
+                        </div>
+                        <div>
+                            <label>נקודת התחלה Y:</label>
+                            <input type="number" value="${path.start[1]}" onchange="updatePathPoint('${carId}', '${dir}', 'start', 1, parseInt(this.value))">
+                        </div>
+                        <div>
+                            <label>נקודת בקרה P1 X:</label>
+                            <input type="number" value="${path.p1[0]}" onchange="updatePathPoint('${carId}', '${dir}', 'p1', 0, parseInt(this.value))">
+                        </div>
+                        <div>
+                            <label>נקודת בקרה P1 Y:</label>
+                            <input type="number" value="${path.p1[1]}" onchange="updatePathPoint('${carId}', '${dir}', 'p1', 1, parseInt(this.value))">
+                        </div>
+                        <div>
+                            <label>נקודת סיום X:</label>
+                            <input type="number" value="${path.end[0]}" onchange="updatePathPoint('${carId}', '${dir}', 'end', 0, parseInt(this.value))">
+                        </div>
+                        <div>
+                            <label>נקודת סיום Y:</label>
+                            <input type="number" value="${path.end[1]}" onchange="updatePathPoint('${carId}', '${dir}', 'end', 1, parseInt(this.value))">
+                        </div>
+                    </div>
+                `;
+            } else if (path.type === 'spline') {
+                const pointsStr = path.points.join(',');
+                return `
+                    <div class="path-controls">
+                        <div style="grid-column: 1 / -1;">
+                            <label>נקודות (X1,Y1,X2,Y2,...):</label>
+                            <input type="text" value="${pointsStr}" onchange="updateSplinePoints('${carId}', '${dir}', this.value)" placeholder="400,450,400,350,350,300">
+                        </div>
+                        <div>
+                            <label>נקודת התחלה X:</label>
+                            <input type="number" value="${path.start[0]}" onchange="updatePathPoint('${carId}', '${dir}', 'start', 0, parseInt(this.value))">
+                        </div>
+                        <div>
+                            <label>נקודת התחלה Y:</label>
+                            <input type="number" value="${path.start[1]}" onchange="updatePathPoint('${carId}', '${dir}', 'start', 1, parseInt(this.value))">
+                        </div>
+                    </div>
+                `;
+            }
+            return '';
+        }
+        
+        function updateCar(carIndex, field, value) {
+            levels[currentEditingIndex].cars[carIndex][field] = value;
+            if (field === 'id') {
+                // עדכון paths אם שונה ה-ID
+                const oldId = levels[currentEditingIndex].cars[carIndex].id;
+                if (levels[currentEditingIndex].paths[oldId]) {
+                    levels[currentEditingIndex].paths[value] = levels[currentEditingIndex].paths[oldId];
+                    delete levels[currentEditingIndex].paths[oldId];
+                }
+                renderCarsList();
+            }
+        }
+        
+        function updatePathType(carId, dir, type) {
+            const level = levels[currentEditingIndex];
+            if (!level.paths[carId]) {
+                level.paths[carId] = {};
+            }
+            
+            if (!type) {
+                delete level.paths[carId][dir];
+            } else {
+                const existing = level.paths[carId][dir];
+                if (type === 'line') {
+                    level.paths[carId][dir] = {
+                        type: 'line',
+                        start: existing?.start || [0, 0],
+                        end: existing?.end || [100, 100]
+                    };
+                } else if (type === 'curve') {
+                    level.paths[carId][dir] = {
+                        type: 'curve',
+                        start: existing?.start || [0, 0],
+                        p1: existing?.p1 || [50, 50],
+                        end: existing?.end || [100, 100]
+                    };
+                } else if (type === 'spline') {
+                    level.paths[carId][dir] = {
+                        type: 'spline',
+                        start: existing?.start || [0, 0],
+                        points: existing?.points || [50, 50, 100, 100]
+                    };
+                }
+            }
+            renderCarsList();
+        }
+        
+        function updatePathPoint(carId, dir, pointName, index, value) {
+            const path = levels[currentEditingIndex].paths[carId][dir];
+            if (pointName === 'start' || pointName === 'end' || pointName === 'p1') {
+                if (!path[pointName]) path[pointName] = [0, 0];
+                path[pointName][index] = value;
+            }
+        }
+        
+        function updateSplinePoints(carId, dir, value) {
+            const path = levels[currentEditingIndex].paths[carId][dir];
+            const points = value.split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p));
+            if (points.length >= 2 && points.length % 2 === 0) {
+                path.points = points;
+            }
+        }
+        
+        function addCar() {
+            const level = levels[currentEditingIndex];
+            const newId = `car${level.cars.length + 1}`;
+            level.cars.push({
+                id: newId,
+                texture: 'red',
+                x: 400,
+                y: 300,
+                angle: 0
+            });
+            if (!level.paths) level.paths = {};
+            level.paths[newId] = {};
+            renderCarsList();
+        }
+        
+        function removeCar(carIndex) {
+            const level = levels[currentEditingIndex];
+            const carId = level.cars[carIndex].id;
+            level.cars.splice(carIndex, 1);
+            if (level.paths[carId]) {
+                delete level.paths[carId];
+            }
+            renderCarsList();
+        }
+        
+        function renderSolutionList() {
+            const container = document.getElementById('solution-list');
+            const level = levels[currentEditingIndex];
+            
+            container.innerHTML = level.solution.map((step, stepIndex) => `
+                <div class="solution-item">
+                    <span>${stepIndex + 1}.</span>
+                    <select onchange="updateSolution(${stepIndex}, 'color', this.value)">
+                        ${level.cars.map(c => `<option value="${c.id}" ${step.color === c.id ? 'selected' : ''}>${c.id}</option>`).join('')}
+                    </select>
+                    <select onchange="updateSolution(${stepIndex}, 'direction', this.value)">
+                        <option value="straight" ${step.direction === 'straight' ? 'selected' : ''}>ישר</option>
+                        <option value="left" ${step.direction === 'left' ? 'selected' : ''}>שמאל</option>
+                        <option value="right" ${step.direction === 'right' ? 'selected' : ''}>ימין</option>
+                    </select>
+                    <button class="btn btn-danger" onclick="removeSolutionStep(${stepIndex})">🗑️</button>
+                </div>
+            `).join('');
+        }
+        
+        function updateSolution(stepIndex, field, value) {
+            levels[currentEditingIndex].solution[stepIndex][field] = value;
+        }
+        
+        function addSolutionStep() {
+            const level = levels[currentEditingIndex];
+            if (level.cars.length === 0) {
+                alert('יש להוסיף מכונית קודם!');
+                return;
+            }
+            level.solution.push({
+                color: level.cars[0].id,
+                direction: 'straight'
+            });
+            renderSolutionList();
+        }
+        
+        function removeSolutionStep(stepIndex) {
+            levels[currentEditingIndex].solution.splice(stepIndex, 1);
+            renderSolutionList();
+        }
+        
+        function saveCurrentLevel() {
+            const level = levels[currentEditingIndex];
+            level.id = parseInt(document.getElementById('level-id').value);
+            level.instruction = document.getElementById('level-instruction').value;
+            level.bgImage = document.getElementById('level-bg-image').value;
+            level.solutionImage = document.getElementById('level-solution-image').value;
+            level.errorText = document.getElementById('level-error-text').value;
+            level.solutionText = document.getElementById('level-solution-text').value;
+            
+            saveLevels();
+            renderLevelsList();
+            showSaveStatus();
+        }
+        
+        function addNewLevel() {
+            const newId = levels.length > 0 ? Math.max(...levels.map(l => l.id)) + 1 : 1;
+            const newLevel = {
+                id: newId,
+                instruction: "הוראות חדשות",
+                errorText: "",
+                solutionText: "",
+                bgImage: "images/background-junction.png",
+                solutionImage: "images/solution-screen.png",
+                cars: [],
+                paths: {},
+                solution: []
+            };
+            levels.push(newLevel);
+            currentEditingIndex = levels.length - 1;
+            editLevel(currentEditingIndex);
+            renderLevelsList();
+        }
+        
+        function deleteCurrentLevel() {
+            if (confirm('האם אתה בטוח שברצונך למחוק את השלב הזה?')) {
+                levels.splice(currentEditingIndex, 1);
+                currentEditingIndex = -1;
+                document.getElementById('editor-panel').classList.remove('active');
+                renderLevelsList();
+                saveLevels();
+            }
+        }
+        
+        function cancelEdit() {
+            currentEditingIndex = -1;
+            document.getElementById('editor-panel').classList.remove('active');
+            renderLevelsList();
+        }
+        
+        /** שומר לשרת (save-levels.php). אם אין PHP – מוריד קובץ levels.json */
+        async function saveLevels() {
+            const statusEl = document.getElementById('save-status');
+            const errorEl = document.getElementById('save-error');
+            statusEl.style.display = 'none';
+            errorEl.style.display = 'none';
+            errorEl.textContent = '';
+
+            try {
+                const r = await fetch('save-levels.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(levels)
+                });
+                const res = await r.json().catch(() => ({}));
+                if (r.ok && res.ok) {
+                    statusEl.style.display = 'block';
+                    setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
+                    return;
+                }
+            } catch (e) {
+                console.warn('Save to server failed:', e.message);
+            }
+
+            // בדיקות מקומיות (אין PHP): שמירה בדפדפן – המשחק יקרא מכאן
+            localStorage.setItem('carGameLevels', JSON.stringify(levels));
+            statusEl.style.display = 'block';
+            statusEl.textContent = '✓ נשמר בדפדפן (בדיקות מקומיות). רענני את המשחק כדי לראות.';
+            setTimeout(() => { statusEl.style.display = 'none'; statusEl.textContent = '✓ נשמר בהצלחה!'; }, 3000);
+
+            errorEl.style.color = '#1565c0';
+            errorEl.textContent = 'בדיקות מקומיות: נשמר בדפדפן. רענני את המשחק (index.html) באותו דומיין כדי לראות. הקובץ levels.json יורד – להעלאה לשרת.';
+            errorEl.style.display = 'block';
+            const blob = new Blob([JSON.stringify(levels, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'levels.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function showSaveStatus() {
+            const status = document.getElementById('save-status');
+            status.style.display = 'block';
+            setTimeout(() => { status.style.display = 'none'; }, 2000);
+        }
+
+        /** ייבוא מ-levels.json מהמחשב */
+        function importLevelsJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function() {
+                try {
+                    const data = JSON.parse(reader.result);
+                    if (!Array.isArray(data) || data.length === 0) throw new Error('מערך ריק או לא תקין');
+                    levels = data;
+                    renderLevelsList();
+                    alert('יובאו ' + levels.length + ' שלבים. לחץ "שמור" כדי לשמור לשרת.');
+                } catch (e) {
+                    alert('שגיאה בייבוא: ' + e.message);
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+        
+        // טעינה ראשונית
+        loadLevels();
+    </script>
+</body>
+</html>
+

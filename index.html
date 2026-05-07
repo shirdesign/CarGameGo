@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Traffic Logic Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        body { 
+            margin: 0; padding: 0; background-color: #e0e0e0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh;
+            touch-action: none; 
+        }
+        
+        #traffic-game-container {
+            display: flex; flex-direction: row-reverse;
+            align-items: center; justify-content: center;
+            width: 1200px; height: 800px; max-width: 100%; max-height: 100%;
+        }
+        
+        #game-container { 
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            height: 600px; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); background: #888; cursor: grab;
+        }
+        
+        #game-container:active { cursor: grabbing; }
+        
+        #ui-layer {
+            width: 320px; height: 550px; background: white;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1); border-radius: 12px;
+            overflow-y: auto; margin-right: 20px; display: flex; flex-direction: column;
+        }
+
+        @media (max-width: 1100px) {
+            #traffic-game-container { flex-direction: column; height: auto; padding: 10px; }
+            #game-container { width: 100%; height: auto; aspect-ratio: 4/3; }
+            #ui-layer { width: 100%; height: auto; margin-right: 0; margin-top: 20px; }
+        }
+
+        .header { background-color: #ff6b6b; color: white; padding: 20px; font-size: 24px; font-weight: bold; text-align: center; }
+        .content { padding: 20px; color: #333; font-size: 16px; line-height: 1.5; flex: 1; display: flex; flex-direction: column;}
+        
+        .instructions-box { background: #f8f9fa; border-right: 4px solid #ff6b6b; padding: 15px; margin-bottom: 10px; border-radius: 4px; }
+        
+        /* כפתורים */
+        .btn {
+            display: block; width: 100%; padding: 12px;
+            background-color: #333; color: white; text-align: center;
+            border: none; border-radius: 50px; font-size: 18px; cursor: pointer; transition: 0.2s; margin-top: 10px;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        
+        .btn-primary { background-color: #ff6b6b; }
+        .btn-primary:hover { background-color: #ff4c4c; }
+        
+        .btn-secondary { background-color: #6c757d; }
+        .btn-secondary:hover { background-color: #5a6268; }
+
+        .status-box { margin-top: 15px; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; display: none; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        #solution-img { width: 100%; margin-top: 15px; display: none; border-radius: 8px; border: 2px solid #eee; }
+        
+        #buttons-container { margin-top: auto; padding-top: 20px; display: none; }
+
+        /* הודעה כשנפתח ישירות מקובץ (file://) – CORS חוסם טעינת תמונות */
+        #file-protocol-msg {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: #1a1a1a; color: #fff;
+            flex-direction: column; justify-content: center; align-items: center;
+            padding: 40px; text-align: center; z-index: 9999;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #file-protocol-msg.show { display: flex; }
+        #file-protocol-msg h2 { color: #ff6b6b; margin-bottom: 20px; font-size: 28px; }
+        #file-protocol-msg p { max-width: 500px; line-height: 1.8; margin: 10px 0; font-size: 18px; }
+        #file-protocol-msg code { background: #333; padding: 8px 14px; border-radius: 8px; display: inline-block; margin: 15px 0; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <div id="file-protocol-msg">
+        <h2>⚠️ המשחק לא יכול לרוץ מכאן</h2>
+        <p>הדף נפתח ישירות מקובץ, ולכן הדפדפן חוסם טעינת התמונות (שגיאות CORS).</p>
+        <p><strong>פתרון:</strong> להריץ שרת מקומי ולהיכנס דרך הדפדפן לכתובת:</p>
+        <code>http://localhost:8000/index.html</code>
+        <p>בטרמינל, מתוך תיקיית המשחק (CarGameGo), הרצתי:</p>
+        <code>python3 server.py</code>
+        <p>ואז פתחי את הקישור למעלה בדפדפן.</p>
+    </div>
+
+    <div id="traffic-game-container">
+        <!-- ב-Inspect: בדקי על #game-container את data-bg-image ו-data-level-id כדי לראות איזו תמונת רקע מוצגת -->
+        <div id="game-container"></div>
+
+        <div id="ui-layer">
+            <div class="header" id="level-title">
+                שאלה
+                <a href="admin.html" style="float: left; color: white; text-decoration: none; font-size: 14px; margin-top: 5px;">⚙️ אדמין</a>
+            </div>
+            <div class="content">
+                <p id="ui-instructions">טוען...</p>
+                
+                <div class="instructions-box">
+                    <strong>איך משחקים?</strong><br>
+                    1. קליק על רכב לבחירה (יופיעו חצים ירוקים עם הכיוונים הזמינים).<br>
+                    2. 👆 <b>החליקי</b> (Swipe) לכיוון הנסיעה<br>
+                    או חיצים: ⬅️⬆️➡️<br>
+                    או לחץ על החץ הירוק<br>
+                    או גרור עם העכבר לאורך המסלול
+                </div>
+                
+                <div id="status-msg" class="status-box"></div>
+                <!-- ב-Inspect: אחרי סיום שלב בדקי ב-#solution-img את ה־src לראות איזו תמונת פתרון מוצגת -->
+                <img id="solution-img" alt="Solution">
+                
+                <div id="buttons-container">
+                    <button class="btn btn-secondary" id="retry-btn" onclick="initLevel()">נסה שוב</button>
+                    <button class="btn btn-primary" id="next-btn" onclick="nextLevel()">לשאלה הבאה</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // אם הדף נפתח כ־file:// – הצג הודעה (CORS חוסם תמונות)
+        if (window.location.protocol === 'file:') {
+            document.getElementById('file-protocol-msg').classList.add('show');
+        }
+    </script>
+    <script>
+        // ==========================================
+        //         הגדרת השלבים
+        // ==========================================
+        // שלבים ברירת מחדל
+        const DEFAULT_LEVELS = [
+            {
+                id: 1,
+                instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
+                errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, נותן זכות קדימה לרכב הבא ממול ולרכב הבא מימין. הרכב הכחול נותן זכות קדימה לבא מימין. ולכן הרכב האדום נכנס ראשון לצומת",
+                bgImage: "images/background1.png",
+                solutionImage: "images/solution1.png", 
+                
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                    { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                ],
+
+                paths: {
+                    red: {
+                        straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                    },
+                    yellow: {
+                        straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                        right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                    },
+                    blue: {
+                        straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                        left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                    }
+                },
+
+                solution: [
+                    { color: 'red', direction: 'straight' },
+                    { color: 'blue', direction: 'straight' },
+                    { color: 'yellow', direction: 'left' }
+                ]
+            },
+            {
+                id: 2,
+                instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
+                errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, נותן זכות קדימה לרכב הבא ממול ולרכב הבא מימין. הרכב הכחול נותן זכות קדימה לבא מימין. ולכן הרכב האדום נכנס ראשון לצומת",
+                bgImage: "images/background2.png",
+                solutionImage: "images/solution2.png", 
+                
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                    { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                ],
+
+                paths: {
+                    red: {
+                        straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                    },
+                    yellow: {
+                        straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                        right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                    },
+                    blue: {
+                        straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                        left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                    }
+                },
+
+                solution: [
+                    { color: 'red', direction: 'straight' },
+                    { color: 'blue', direction: 'straight' },
+                    { color: 'yellow', direction: 'left' }
+                ]
+            },
+            {
+                id: 3,
+                instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
+                errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                solutionText: "נכון מאוד! המשאית, המעוניינת לסוע ישר, צריכה לתת זכות קדימה לרכב הבא מימין. ולכן הרכב הכחול נכנס ראשון לצומת",
+                bgImage: "images/background3.png",
+                solutionImage: "images/solution3.png", 
+                
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                    { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                ],
+
+                paths: {
+                    red: {
+                        straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                    },
+                    yellow: {
+                        straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                        right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                    },
+                    blue: {
+                        straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                        left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                    }
+                },
+
+                solution: [
+                    { color: 'blue', direction: 'straight' },
+                    { color: 'red', direction: 'straight' },
+                    { color: 'yellow', direction: 'straight' }
+                ]
+            },
+            {
+                id: 4,
+                instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
+                errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, צריך לתת זכות קדימה לרכב הבא מימין. לכן הרכב הכחול נכנס ראשון לצומת",
+                bgImage: "images/background4.png",
+                solutionImage: "images/solution4.png", 
+                
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                    { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                ],
+
+                paths: {
+                    red: {
+                        straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                    },
+                    yellow: {
+                        straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                        right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                    },
+                    blue: {
+                        straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                        left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                    }
+                },
+
+                solution: [
+                    { color: 'blue', direction: 'straight' },
+                    { color: 'yellow', direction: 'left' },
+                    { color: 'red', direction: 'straight' }
+                ]
+            },
+            {
+                id: 5,
+                instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
+                errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                solutionText: "נכון מאוד! לרכב האדום יש תמרור 'תן זכות קדימה', לכן הוא חייב לתת זכות קדימה לכל מי שרוצה להכנס לצומת לפניו. ולכן הרכב הצהוב נכנס ראשון לצומת",
+                bgImage: "images/background5.png",
+                solutionImage: "images/solution5.png", 
+                
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                    { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                ],
+
+                paths: {
+                    red: {
+                        straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                    },
+                    yellow: {
+                        straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                        right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                    },
+                    blue: {
+                        straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                        left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                    }
+                },
+
+                solution: [
+                    { color: 'yellow', direction: 'straight' },
+                    { color: 'red', direction: 'straight' },
+                    { color: 'blue', direction: 'straight' }
+                ]
+            },
+            {
+                id: 6,
+                instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
+                errorText: "אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                solutionText: "נכון מאוד! הרכב הצהוב פונה מחד סטרי אל חד סטרי, לכן הוא יצמד לשמאל ויפנה מהנתיב השמאלי אל הנתיב השמאלי. הרכב האדום פונה מדו סטרי אל דו סטרי, לכן יפנה שמאלה בהצמדות לימין, מהנתיב הימני אל הנתיב הימני.",
+                bgImage: "images/background6.png",
+                solutionImage: "images/solution6.png", 
+                
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 }
+                ],
+
+                paths: {
+                    red: {
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] }
+                    },
+                    yellow: {
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] }
+                    }
+                },
+
+                solution: [
+                    { color: 'red', direction: 'left' },
+                    { color: 'yellow', direction: 'left' }
+                ]
+            },
+            {
+                id: 7,
+                instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
+                errorText: "אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                solutionText: "נכון מאוד! הרכב הצהוב פונה מדו סטרי אל דו סטרי, לכן יפנה שמאלה בהצמדות לימין, מהנתיב הימני אל הנתיב הימני. הרכב האדום פונה מדו סטרי אל חד סטרי, לכן יפנה מהנתיב הימני אל הנתיב השמאלי.",
+                bgImage: "images/background7.png",
+                solutionImage: "images/solution7.png", 
+                
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 }
+                ],
+
+                paths: {
+                    red: {
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] }
+                    },
+                    yellow: {
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] }
+                    }
+                },
+
+                solution: [
+                    { color: 'yellow', direction: 'left' },
+                    { color: 'red', direction: 'left' }
+                ]
+            },
+            {
+                id: 8,
+                instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
+                errorText: "אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                solutionText: "נכון מאוד! הרכב הצהוב פונה מדו סטרי אל חד סטרי, מאחר וזה כביש שיש בו שטח הפרדה, לכן יפנה מהנתיב הימני אל הנתיב השמאלי.",
+                bgImage: "images/background8.png",
+                solutionImage: "images/solution8.png", 
+                
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 }
+                ],
+
+                paths: {
+                    red: {
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] }
+                    },
+                    yellow: {
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] }
+                    }
+                },
+
+                solution: [
+                    { color: 'yellow', direction: 'left' },
+                    { color: 'red', direction: 'left' }
+                ]
+            }
+        ];
+        
+        // טעינת שלבים: קודם levels.json (בשרת), אחר כך localStorage (בדפדפן), אחר כך ברירת מחדל
+        let LEVELS;
+        const config = {
+            type: Phaser.AUTO,
+            parent: 'game-container',
+            width: 800, height: 600,
+            backgroundColor: '#888888',
+            scene: { preload: preload, create: create, update: update }
+        };
+
+        async function loadLevelsAndStartGame() {
+            try {
+                const r = await fetch('levels.json');
+                if (r.ok) {
+                    const data = await r.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        LEVELS = data;
+                    }
+                }
+            } catch (e) {
+                // אין levels.json או שגיאה – ממשיכים ל-localStorage / ברירת מחדל
+            }
+            if (!LEVELS) {
+                try {
+                    const saved = localStorage.getItem('carGameLevels');
+                    if (saved) {
+                        LEVELS = JSON.parse(saved);
+                        if (!Array.isArray(LEVELS) || LEVELS.length === 0) LEVELS = DEFAULT_LEVELS;
+                    }
+                } catch (e) {
+                    LEVELS = DEFAULT_LEVELS;
+                }
+            }
+            if (!LEVELS || !Array.isArray(LEVELS)) LEVELS = DEFAULT_LEVELS;
+            new Phaser.Game(config);
+        }
+        loadLevelsAndStartGame();
+
+        // --- מנוע המשחק ---
+        let currentLevelIndex = 0;
+        let playerMoves = []; 
+        let selectedCar = null;
+        let isInputLocked = false;
+        let carsMap = {}; 
+        let activePaths = {}; 
+        let gameScene = null;
+        let dragStartX = 0, dragStartY = 0;
+        let directionArrows = {}; // חצים שמראים כיוונים זמינים
+        let isDraggingCar = false;
+        let dragPath = null;
+        let dragDirection = null;
+        let destinationMarkers = []; // עיגולי יעד פולסינגים
+        
+        function preload() {
+            // טעינת כל תמונות הרקע של השלבים (כל שלב יכול צומת אחרת)
+            const bgLoaded = {};
+            if (typeof LEVELS !== 'undefined' && Array.isArray(LEVELS)) {
+                LEVELS.forEach(level => {
+                    const src = level.bgImage || 'images/background-junction.png';
+                    if (!bgLoaded[src]) {
+                        bgLoaded[src] = true;
+                        const key = src.split('/').pop();
+                        this.load.image(key, src);
+                    }
+                });
+            }
+            if (!bgLoaded['images/background-junction.png']) {
+                this.load.image('background-junction.png', 'images/background-junction.png');
+            }
+            this.load.image('red', 'images/red.png');
+            this.load.image('blue', 'images/blue.png');
+            this.load.image('yellow', 'images/yellow.png');
+            this.load.image('grey', 'images/grey.png');
+        }
+
+        function create() {
+            gameScene = this;
+            
+            this.input.on('pointerdown', (pointer) => {
+                dragStartX = pointer.x; 
+                dragStartY = pointer.y;
+                
+                // בדיקה אם לחיצה על מסלול
+                if (selectedCar && !isInputLocked) {
+                    const clickedPath = checkPathClick(pointer.x, pointer.y, selectedCar);
+                    if (clickedPath) {
+                        isDraggingCar = true;
+                        dragPath = clickedPath.path;
+                        dragDirection = clickedPath.direction;
+                    }
+                }
+            });
+            
+            this.input.on('pointermove', (pointer) => {
+                // גרירה עם העכבר - אם המכונית נבחרת וגוררים
+                if (selectedCar && selectedCar.isDragging && !isInputLocked) {
+                    const diffX = pointer.x - selectedCar.dragStartX;
+                    const diffY = pointer.y - selectedCar.dragStartY;
+                    const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+                    
+                    // אם הגרירה מספיק ארוכה (יותר מ-10 פיקסלים), נסה לזוז בכיוון
+                    if (distance > 10) {
+                        // זה יעבוד עם handleSwipe שמזהה את הכיוון
+                        // אבל כרגע פשוט נציג אינדיקציה ויזואלית
+                        selectedCar.setTint(0x88ff88); // צבע שונה כשגוררים
+                    }
+                }
+                
+                // גרירה על מסלול (הקוד הישן)
+                if (isDraggingCar && selectedCar && dragPath) {
+                    const closestT = findClosestPointOnPath(dragPath, pointer.x, pointer.y);
+                    if (closestT !== null) {
+                        const point = dragPath.getPoint(closestT);
+                        selectedCar.x = point.x;
+                        selectedCar.y = point.y;
+                        const tangent = dragPath.getTangent(closestT);
+                        selectedCar.rotation = tangent.angle() + Math.PI / 2;
+                        selectedCar.pathFollower.t = closestT;
+                    }
+                }
+            });
+            
+            this.input.on('pointerup', (pointer) => {
+                // גרירה פשוטה עם העכבר
+                if (selectedCar && selectedCar.isDragging && !isInputLocked) {
+                    selectedCar.isDragging = false;
+                    const diffX = pointer.x - selectedCar.dragStartX;
+                    const diffY = pointer.y - selectedCar.dragStartY;
+                    const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+                    
+                    // אם הגרירה מספיק ארוכה, נסה לזוז בכיוון
+                    if (distance > 30) {
+                        selectedCar.setTint(0x55ff55); // חזור לצבע רגיל
+                        handleSwipe(diffX, diffY);
+                    } else {
+                        selectedCar.setTint(0x55ff55); // חזור לצבע רגיל
+                    }
+                    return;
+                }
+                
+                // גרירה על מסלול (הקוד הישן)
+                if (isDraggingCar && selectedCar && dragPath && dragDirection) {
+                    isDraggingCar = false;
+                    const finalT = selectedCar.pathFollower.t;
+                    
+                    if (finalT >= 0.95) {
+                        selectedCar.pathFollower.t = 1;
+                        const endPoint = dragPath.getPoint(1);
+                        selectedCar.x = endPoint.x;
+                        selectedCar.y = endPoint.y;
+                        
+                        playerMoves.push({ color: selectedCar.name, direction: dragDirection });
+                        selectedCar.setTint(0x888888);
+                        selectedCar.hasMoved = true;
+                        selectedCar.disableInteractive();
+                        hideDirectionArrows(selectedCar.name);
+                        selectedCar = null;
+                        
+                        const levelData = LEVELS[currentLevelIndex];
+                        if (playerMoves.length === levelData.solution.length) {
+                            checkWinCondition();
+                        }
+                    } else {
+                        selectedCar.pathFollower.t = 0;
+                        const startPoint = dragPath.getPoint(0);
+                        selectedCar.x = startPoint.x;
+                        selectedCar.y = startPoint.y;
+                        selectedCar.rotation = Phaser.Math.DegToRad(LEVELS[currentLevelIndex].cars.find(c => c.id === selectedCar.name).angle);
+                    }
+                    dragPath = null;
+                    dragDirection = null;
+                } else if (!isDraggingCar && selectedCar && !isInputLocked && !selectedCar.isDragging) {
+                    // Swipe רגיל (אם לא הייתה גרירה)
+                    const diffX = pointer.x - dragStartX;
+                    const diffY = pointer.y - dragStartY;
+                    if (Math.abs(diffX) < 30 && Math.abs(diffY) < 30) return;
+                    handleSwipe(diffX, diffY);
+                }
+            });
+
+            initLevel();
+        }
+        
+        function checkPathClick(x, y, car) {
+            if (!activePaths[car.name]) return null;
+            
+            // בדוק כל מסלול - אם הנקודה קרובה למסלול (בטווח 50 פיקסלים)
+            for (let dir in activePaths[car.name]) {
+                const path = activePaths[car.name][dir];
+                const t = findClosestPointOnPath(path, x, y);
+                if (t !== null) {
+                    const point = path.getPoint(t);
+                    const distance = Phaser.Math.Distance.Between(x, y, point.x, point.y);
+                    if (distance < 50) {
+                        return { path: path, direction: dir };
+                    }
+                }
+            }
+            return null;
+        }
+        
+        function findClosestPointOnPath(path, x, y) {
+            let closestT = null;
+            let minDistance = Infinity;
+            
+            // בדוק נקודות על המסלול
+            for (let t = 0; t <= 1; t += 0.01) {
+                try {
+                    const point = path.getPoint(t);
+                    const distance = Phaser.Math.Distance.Between(x, y, point.x, point.y);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestT = t;
+                    }
+                } catch (e) {
+                    // Skip invalid points
+                }
+            }
+            
+            return closestT;
+        }
+
+        function initLevel() {
+            playerMoves = [];
+            selectedCar = null;
+            isInputLocked = false;
+            isDraggingCar = false;
+            Object.values(carsMap).forEach(c => { if(c) c.destroy(); });
+            Object.keys(directionArrows).forEach(carName => hideDirectionArrows(carName));
+            destinationMarkers.forEach(m => { if (m && m.destroy) m.destroy(); });
+            destinationMarkers = [];
+            directionArrows = {};
+            carsMap = {};
+            activePaths = {};
+            gameScene.children.removeAll();
+
+            const levelData = LEVELS[currentLevelIndex];
+
+            // טעינת רקע – צומת שונה לכל שלב (depth 0)
+            const bgSrc = levelData.bgImage || 'images/background-junction.png';
+            const bgKey = bgSrc.split('/').pop();
+            const bgImage = gameScene.add.image(400, 300, bgKey).setDisplaySize(800, 600);
+            bgImage.setDepth(0);
+
+            // לדיבוג ב-Inspect: לראות איזו תמונת רקע מוצגת
+            const gameContainerEl = document.getElementById('game-container');
+            gameContainerEl.setAttribute('data-level-id', String(levelData.id));
+            gameContainerEl.setAttribute('data-bg-image', bgSrc);
+            gameContainerEl.setAttribute('data-bg-key', bgKey);
+
+            // בניית מסלולים
+            for (let carId in levelData.paths) {
+                activePaths[carId] = {};
+                for (let dir in levelData.paths[carId]) {
+                    const pData = levelData.paths[carId][dir];
+                    if (!pData || !pData.start) continue;
+                    let newPath;
+                    if (pData.type === 'line' && pData.end) {
+                        newPath = new Phaser.Curves.Path(pData.start[0], pData.start[1]).lineTo(pData.end[0], pData.end[1]);
+                    } 
+                    else if (pData.type === 'spline' && pData.points && pData.points.length >= 2) {
+                        newPath = new Phaser.Curves.Path(pData.start[0], pData.start[1]).splineTo(pData.points);
+                    }
+                    else if (pData.type === 'curve' && pData.p1 && pData.end) {
+                        newPath = new Phaser.Curves.Path(pData.start[0], pData.start[1]).quadraticBezierTo(pData.p1[0], pData.p1[1], pData.end[0], pData.end[1]);
+                    }
+                    else continue;
+                    activePaths[carId][dir] = newPath;
+                }
+            }
+
+            // עיגול יעד אחד לכל מכונית — רק על נקודת הסיום של כיוון הפתרון
+            const carColors = { red: 0xff3333, yellow: 0xffdd00, blue: 0x44aaff, grey: 0xaaaaaa };
+            const solutionDirMap = {};
+            levelData.solution.forEach(s => { solutionDirMap[s.color] = s.direction; });
+
+            for (let carId in activePaths) {
+                const solutionDir = solutionDirMap[carId];
+                if (!solutionDir || !activePaths[carId][solutionDir]) continue;
+                const color = carColors[carId] || 0xffffff;
+                const endPt = activePaths[carId][solutionDir].getPoint(1);
+                if (!endPt) continue;
+
+                const ring = gameScene.add.graphics();
+                ring.lineStyle(4, color, 1);
+                ring.strokeCircle(0, 0, 20);
+                ring.fillStyle(color, 0.3);
+                ring.fillCircle(0, 0, 20);
+                ring.x = endPt.x;
+                ring.y = endPt.y;
+                ring.setDepth(0.5);
+
+                gameScene.tweens.add({
+                    targets: ring,
+                    scaleX: 1.45, scaleY: 1.45,
+                    alpha: 0.35,
+                    duration: 750,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+                destinationMarkers.push(ring);
+            }
+
+            // יצירת מכוניות
+            levelData.cars.forEach(carData => {
+                const car = createCar(gameScene, carData.x, carData.y, carData.texture, carData.id, carData.angle);
+                carsMap[carData.id] = car;
+            });
+
+            // עדכון ממשק
+            document.getElementById('level-title').innerText = `שאלה מספר ${levelData.id}`;
+            document.getElementById('ui-instructions').innerText = levelData.instruction;
+            document.getElementById('status-msg').style.display = 'none';
+            document.getElementById('solution-img').style.display = 'none';
+            document.getElementById('buttons-container').style.display = 'none'; 
+
+            window.removeEventListener('keydown', handleKeyInput);
+            window.addEventListener('keydown', handleKeyInput);
+        }
+
+        function createCar(scene, x, y, texture, name, angle) {
+            const car = scene.add.image(x, y, texture).setScale(1);
+            car.setDepth(1);
+            car.name = name;
+            car.initialAngle = angle; // שמור את הזווית המקורית
+            car.angle = angle; 
+            car.setInteractive({ cursor: 'grab', useHandCursor: true });
+            car.pathFollower = { t: 0 };
+            car.isDragging = false;
+            car.dragStartX = 0;
+            car.dragStartY = 0;
+            car.hasMoved = false;
+
+            car.on('pointerdown', (pointer) => {
+                if (isInputLocked) return;
+                if (car.hasMoved) return;
+                if (selectedCar) {
+                    selectedCar.setTint(0xffffff);
+                    hideDirectionArrows(selectedCar.name);
+                }
+                selectedCar = car;
+                car.setTint(0x55ff55);
+                showDirectionArrows(car);
+                
+                // התחל גרירה
+                car.isDragging = true;
+                car.dragStartX = pointer.x;
+                car.dragStartY = pointer.y;
+            });
+            
+            return car;
+        }
+        
+        // זווית "קדימה" של הרכב במערכת מתמטית (רדיאנים): במשחק 0° = למעלה, במתמטיקה 0 = ימין
+        function getCarForwardMathAngleRad(car) {
+            const gameAngle = (car.initialAngle !== undefined ? car.initialAngle : car.angle);
+            return Phaser.Math.DegToRad(gameAngle - 90);
+        }
+        
+        function showDirectionArrows(car) {
+            hideDirectionArrows(car.name); // נקה חצים קודמים
+            
+            if (!activePaths[car.name]) return;
+            
+            const availableDirs = Object.keys(activePaths[car.name]);
+            if (availableDirs.length === 0) return;
+            
+            directionArrows[car.name] = [];
+            
+            // זווית "קדימה" ברדיאנים (כדי ש-0 במשחק = למעלה)
+            const forwardRad = getCarForwardMathAngleRad(car);
+            const distance = 80;
+            
+            // מיפוי כיוונים לזווית: ישר=קדימה; שמאל=צד שמאל (קדימה-90°), ימין=צד ימין (קדימה+90°)
+            const dirToMathAngle = {
+                'straight': forwardRad,
+                'left': forwardRad - Math.PI / 2,
+                'right': forwardRad + Math.PI / 2
+            };
+            
+            availableDirs.forEach((dir) => {
+                const angleRad = dirToMathAngle[dir] !== undefined ? dirToMathAngle[dir] : forwardRad;
+                const arrowX = car.x + Math.cos(angleRad) * distance;
+                const arrowY = car.y + Math.sin(angleRad) * distance;
+                
+                // יצירת חץ (משולש)
+                const arrow = gameScene.add.graphics();
+                const size = 15;
+                
+                arrow.lineStyle(3, 0x00ff00, 1);
+                arrow.fillStyle(0x00ff00, 0.5);
+                
+                // צייר משולש (Phaser Graphics API)
+                arrow.fillTriangle(0, -size, -size/2, size/2, size/2, size/2);
+                arrow.strokeTriangle(0, -size, -size/2, size/2, size/2, size/2);
+                
+                arrow.x = arrowX;
+                arrow.y = arrowY;
+                arrow.rotation = angleRad + Math.PI / 2; // התאם את הזווית (חץ מצביע לכיוון הנסיעה)
+                arrow.setInteractive(new Phaser.Geom.Circle(0, 0, 28), Phaser.Geom.Circle.Contains);
+                arrow.setDepth(2);
+                
+                // טקסט של הכיוון
+                const labelText = dir === 'straight' ? 'ישר' : dir === 'left' ? 'שמאל' : 'ימין';
+                const label = gameScene.add.text(arrowX, arrowY - 25, labelText, {
+                    fontSize: '14px',
+                    fill: '#00ff00',
+                    fontWeight: 'bold',
+                    backgroundColor: '#000000',
+                    padding: { x: 5, y: 2 }
+                });
+                label.setOrigin(0.5);
+                label.setDepth(2);
+                
+                arrow.label = label;
+                arrow.direction = dir;
+                arrow.carName = car.name;
+                
+                arrow.on('pointerdown', (pointer) => {
+                    if (!isInputLocked) {
+                        moveCar(carsMap[car.name], dir);
+                    }
+                });
+                
+                directionArrows[car.name].push(arrow);
+                directionArrows[car.name].push(label);
+            });
+        }
+        
+        function hideDirectionArrows(carName) {
+            if (directionArrows[carName]) {
+                directionArrows[carName].forEach(item => {
+                    if (item && item.destroy) item.destroy();
+                });
+                directionArrows[carName] = [];
+            }
+        }
+
+        function nextLevel() {
+            if (currentLevelIndex < LEVELS.length - 1) {
+                currentLevelIndex++;
+                initLevel();
+            } else {
+                alert('סיימת את כל השלבים!');
+                currentLevelIndex = 0;
+                initLevel();
+            }
+        }
+
+        function handleSwipe(diffX, diffY) {
+            if (!selectedCar || !activePaths[selectedCar.name]) return;
+            
+            const swipeLength = Math.sqrt(diffX * diffX + diffY * diffY);
+            if (swipeLength < 25) return; // swipe חלש מדי
+            
+            // כיוון ה-swipe במערכת מתמטית (0 = ימין)
+            const swipeAngle = Math.atan2(diffY, diffX);
+            // זווית "קדימה" של הרכב באותה מערכת
+            const carForwardRad = getCarForwardMathAngleRad(selectedCar);
+            // זווית ה-swipe יחסית לרכב: 0 = החלקה בדיוק לכיוון שהרכב פונה
+            let relativeAngle = swipeAngle - carForwardRad;
+            relativeAngle = ((relativeAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            
+            const availableDirs = Object.keys(activePaths[selectedCar.name]);
+            if (availableDirs.length === 0) return;
+            
+            const dirAngles = { 'straight': 0, 'left': -Math.PI / 2, 'right': Math.PI / 2 };
+            let bestDir = null;
+            let minAngleDiff = Infinity;
+            
+            availableDirs.forEach(dir => {
+                const dirAngle = dirAngles[dir];
+                let angleDiff = Math.abs(relativeAngle - dirAngle);
+                if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                if (angleDiff < minAngleDiff) {
+                    minAngleDiff = angleDiff;
+                    bestDir = dir;
+                }
+            });
+            
+            // קבלה של swipe בתוך ~90° מהכיוון (פחות מחמיר מ-PI/3)
+            if (minAngleDiff < Math.PI / 2 && bestDir) {
+                moveCar(selectedCar, bestDir);
+            }
+        }
+
+        function handleKeyInput(event) {
+            if (!selectedCar || isInputLocked) return;
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(event.code) > -1) event.preventDefault();
+            
+            if (!activePaths[selectedCar.name]) return;
+            const availableDirs = Object.keys(activePaths[selectedCar.name]);
+            if (availableDirs.length === 0) return;
+            
+            let dir = null;
+            if (availableDirs.length === 1) {
+                dir = availableDirs[0];
+            } else {
+                // חץ למעלה או למטה = ישר (קדימה), שמאל = פניה שמאלה, ימין = פניה ימינה
+                if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+                    if (availableDirs.includes('straight')) dir = 'straight';
+                    else if (availableDirs.includes('right')) dir = 'right';
+                    else if (availableDirs.includes('left')) dir = 'left';
+                }
+                if (event.key === "ArrowLeft") {
+                    if (availableDirs.includes('left')) dir = 'left';
+                    else if (availableDirs.includes('straight')) dir = 'straight';
+                }
+                if (event.key === "ArrowRight") {
+                    if (availableDirs.includes('right')) dir = 'right';
+                    else if (availableDirs.includes('straight')) dir = 'straight';
+                }
+            }
+            if (dir) moveCar(selectedCar, dir);
+        }
+
+        function moveCar(car, directionName) {
+            if (!activePaths[car.name] || !activePaths[car.name][directionName]) {
+                gameScene.tweens.add({ targets: car, x: car.x + 5, duration: 50, yoyo: true, repeat: 3 });
+                return; 
+            }
+
+            const path = activePaths[car.name][directionName];
+            isInputLocked = true;
+            const rotationOffset = Math.PI / 2;
+
+            gameScene.tweens.add({
+                targets: car.pathFollower,
+                t: 1,
+                duration: 2000,
+                ease: 'Sine.easeInOut',
+                onUpdate: () => {
+                    const point = path.getPoint(car.pathFollower.t);
+                    car.x = point.x;
+                    car.y = point.y;
+                    const tangent = path.getTangent(car.pathFollower.t);
+                    car.rotation = tangent.angle() + rotationOffset; 
+                },
+                onComplete: () => {
+                    playerMoves.push({ color: car.name, direction: directionName });
+                    car.setTint(0x888888);
+                    car.hasMoved = true;
+                    car.disableInteractive();
+                    hideDirectionArrows(car.name);
+                    selectedCar = null;
+                    isInputLocked = false;
+
+                    const levelData = LEVELS[currentLevelIndex];
+                    if (playerMoves.length === levelData.solution.length) {
+                        checkWinCondition();
+                    }
+                }
+            });
+        }
+
+        function checkWinCondition() {
+            const statusBox = document.getElementById('status-msg');
+            const buttonsContainer = document.getElementById('buttons-container');
+            const retryBtn = document.getElementById('retry-btn');
+            const nextBtn = document.getElementById('next-btn');
+            
+            const levelData = LEVELS[currentLevelIndex];
+            
+            let isCorrect = true;
+            let errorMsg = "";
+
+            for (let i = 0; i < levelData.solution.length; i++) {
+                const move = playerMoves[i];
+                const expected = levelData.solution[i];
+                if (move.color !== expected.color) { isCorrect = false; errorMsg = `טעות בסדר!`; break; }
+                if (move.direction !== expected.direction) { isCorrect = false; errorMsg = `טעות בכיוון!`; break; }
+            }
+
+            // תמונת פתרון שונה לכל שלב – מוצגת אחרי סיום (נכון או כישלון)
+            const solutionImg = document.getElementById('solution-img');
+            if (levelData.solutionImage) {
+                solutionImg.src = levelData.solutionImage;
+                solutionImg.style.display = 'block';
+            } else {
+                solutionImg.style.display = 'none';
+            }
+
+            statusBox.style.display = 'block';
+            buttonsContainer.style.display = 'block'; 
+
+            if (isCorrect) {
+                // הצלחה
+                statusBox.className = 'status-box success';
+                statusBox.innerText = levelData.solutionText || "כל הכבוד! תשובה נכונה.";
+                
+                retryBtn.style.display = 'none'; // רק כפתור הבא
+                nextBtn.style.display = 'block';
+                nextBtn.innerText = "לשאלה הבאה";
+            } else {
+                // כישלון
+                statusBox.className = 'status-box error';
+                statusBox.innerText = levelData.errorText || errorMsg; // מציג את השגיאה הספציפית
+                
+                retryBtn.style.display = 'block';
+                nextBtn.style.display = 'block';
+                nextBtn.innerText = "דלג לשאלה הבאה";
+            }
+        }
+        function update() {}
+    </script>
+</body>
+</html>
