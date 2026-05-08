@@ -77,14 +77,14 @@
     "bgImage": "images/background3.png",
     "solutionImage": "images/solution3.png",
     "cars": [
-      { "id": "grey", "texture": "grey", "x": 330, "y": 0,   "angle": 180 },
+      { "id": "grey", "texture": "grey", "x": 330, "y": 20,  "angle": 180 },
       { "id": "blue", "texture": "blue", "x": 90,  "y": 362, "angle": 90  }
     ],
     "paths": {
       "grey": {
-        "straight": { "type": "line",   "start": [330,0], "end": [290,548] },
-        "left":     { "type": "spline", "start": [330,0], "points": [330,252, 370,325, 418,362, 760,362] },
-        "right":    { "type": "curve",  "start": [330,0], "p1": [325,255], "end": [40,271] }
+        "straight": { "type": "line",   "start": [330,20], "end": [290,548] },
+        "left":     { "type": "spline", "start": [330,20], "points": [330,252, 370,325, 418,362, 760,362] },
+        "right":    { "type": "curve",  "start": [330,20], "p1": [325,255], "end": [40,271] }
       },
       "blue": {
         "straight": { "type": "line",   "start": [90,362], "end": [760,362] },
@@ -106,7 +106,7 @@
     "solutionImage": "images/solution4.png",
     "cars": [
       { "id": "blue",   "texture": "blue",   "x": 707, "y": 271, "angle": -90 },
-      { "id": "yellow", "texture": "yellow", "x": 451, "y": 600, "angle": 0   }
+      { "id": "yellow", "texture": "yellow", "x": 451, "y": 580, "angle": 0   }
     ],
     "paths": {
       "blue": {
@@ -115,9 +115,9 @@
         "right":    { "type": "curve",  "start": [707,271], "p1": [490,252], "end": [451,82] }
       },
       "yellow": {
-        "straight": { "type": "line",   "start": [451,600], "end": [451,82] },
-        "left":     { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 84,261] },
-        "right":    { "type": "curve",  "start": [451,600], "p1": [455,395], "end": [760,362] }
+        "straight": { "type": "line",   "start": [451,580], "end": [451,82] },
+        "left":     { "type": "spline", "start": [451,580], "points": [451,395, 415,325, 355,271, 84,261] },
+        "right":    { "type": "curve",  "start": [451,580], "p1": [455,395], "end": [760,362] }
       }
     },
     "solution": [
@@ -134,7 +134,7 @@
     "solutionImage": "images/solution5.png",
     "cars": [
       { "id": "yellow", "texture": "yellow", "x": 90,  "y": 362, "angle": 90  },
-      { "id": "red",    "texture": "red",    "x": 451, "y": 600, "angle": 0   }
+      { "id": "red",    "texture": "red",    "x": 451, "y": 580, "angle": 0   }
     ],
     "paths": {
       "yellow": {
@@ -143,9 +143,9 @@
         "right":    { "type": "curve",  "start": [90,362], "p1": [305,395], "end": [330,545] }
       },
       "red": {
-        "straight": { "type": "line",   "start": [451,600], "end": [461,39] },
-        "left":     { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 40,271] },
-        "right":    { "type": "curve",  "start": [451,600], "p1": [455,395], "end": [760,362] }
+        "straight": { "type": "line",   "start": [451,580], "end": [461,39] },
+        "left":     { "type": "spline", "start": [451,580], "points": [451,395, 415,325, 355,271, 40,271] },
+        "right":    { "type": "curve",  "start": [451,580], "p1": [455,395], "end": [760,362] }
       }
     },
     "solution": [
@@ -161,15 +161,17 @@
     "bgImage": "images/background6.png",
     "solutionImage": "images/solution6.png",
     "cars": [
-      { "id": "red",    "texture": "red",    "x": 330, "y": 0,   "angle": 180 },
-      { "id": "yellow", "texture": "yellow", "x": 451, "y": 600, "angle": 0   }
+      { "id": "red",    "texture": "red",    "x": 330, "y": 20,  "angle": 180 },
+      { "id": "yellow", "texture": "yellow", "x": 451, "y": 580, "angle": 0   }
     ],
     "paths": {
       "red": {
-        "left": { "type": "spline", "start": [330,0], "points": [330,252, 370,325, 418,362, 752,354] }
+        "left":       { "type": "spline", "start": [330,20], "points": [330,252, 370,325, 418,362, 752,354] },
+        "left_wrong": { "type": "spline", "start": [330,20], "points": [330,252, 370,271, 418,271, 752,259] }
       },
       "yellow": {
-        "left": { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 43,262] }
+        "left":       { "type": "spline", "start": [451,580], "points": [451,395, 415,325, 355,271, 43,262] },
+        "left_wrong": { "type": "spline", "start": [451,580], "points": [451,395, 415,362, 355,340, 43,338] }
       }
     },
     "solution": [
@@ -185,15 +187,17 @@
     "bgImage": "images/background7.png",
     "solutionImage": "images/solution7.png",
     "cars": [
-      { "id": "red",    "texture": "red",    "x": 330, "y": 0,   "angle": 180 },
-      { "id": "yellow", "texture": "yellow", "x": 451, "y": 600, "angle": 0   }
+      { "id": "red",    "texture": "red",    "x": 330, "y": 20,  "angle": 180 },
+      { "id": "yellow", "texture": "yellow", "x": 451, "y": 580, "angle": 0   }
     ],
     "paths": {
       "red": {
-        "left": { "type": "spline", "start": [330,0], "points": [330,252, 370,325, 418,362, 751,270] }
+        "left":       { "type": "spline", "start": [330,20], "points": [330,252, 370,325, 418,362, 751,270] },
+        "left_wrong": { "type": "spline", "start": [330,20], "points": [330,252, 355,290, 390,345, 750,359] }
       },
       "yellow": {
-        "left": { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 43,266] }
+        "left":       { "type": "spline", "start": [451,580], "points": [451,395, 415,325, 355,271, 43,266] },
+        "left_wrong": { "type": "spline", "start": [451,580], "points": [451,395, 430,380, 400,362, 43,345] }
       }
     },
     "solution": [
@@ -209,11 +213,12 @@
     "bgImage": "images/backgound8.png",
     "solutionImage": "images/solution8.png",
     "cars": [
-      { "id": "yellow", "texture": "yellow", "x": 800, "y": 271, "angle": -90 }
+      { "id": "yellow", "texture": "yellow", "x": 780, "y": 271, "angle": -90 }
     ],
     "paths": {
       "yellow": {
-        "left": { "type": "spline", "start": [800,271], "points": [490,271, 390,325, 332,400, 342,562] }
+        "left":       { "type": "spline", "start": [780,271], "points": [490,271, 390,325, 332,400, 342,562] },
+        "left_wrong": { "type": "spline", "start": [780,271], "points": [490,271, 390,340, 265,410, 265,555] }
       }
     },
     "solution": [

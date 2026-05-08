@@ -13,9 +13,29 @@
         }
         
         #traffic-game-container {
-            display: flex; flex-direction: row-reverse;
+            display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            width: 1200px; height: 800px; max-width: 100%; max-height: 100%;
+            width: 1200px; max-width: 100%;
+        }
+
+        #game-ui-row {
+            display: flex; flex-direction: row-reverse;
+            align-items: flex-start; justify-content: center;
+            width: 100%;
+        }
+
+        #how-to-play-bar {
+            background: #f8f9fa; border-right: 4px solid #ff6b6b;
+            padding: 10px 20px; margin-bottom: 10px; border-radius: 8px;
+            font-size: 14px; line-height: 1.6; color: #333; width: 100%;
+            box-sizing: border-box;
+        }
+
+        #rotate-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.92); color: white;
+            flex-direction: column; justify-content: center; align-items: center;
+            font-size: 28px; z-index: 9998; text-align: center; gap: 16px;
         }
         
         #game-container { 
@@ -33,7 +53,7 @@
         }
 
         @media (max-width: 1100px) {
-            #traffic-game-container { flex-direction: column; height: auto; padding: 10px; }
+            #game-ui-row { flex-direction: column; }
             #game-container { width: 100%; height: auto; aspect-ratio: 4/3; }
             #ui-layer { width: 100%; height: auto; margin-right: 0; margin-top: 20px; }
         }
@@ -92,34 +112,36 @@
         <p>ואז פתחי את הקישור למעלה בדפדפן.</p>
     </div>
 
-    <div id="traffic-game-container">
-        <!-- ב-Inspect: בדקי על #game-container את data-bg-image ו-data-level-id כדי לראות איזו תמונת רקע מוצגת -->
-        <div id="game-container"></div>
+    <div id="rotate-overlay">
+        📱<br>סובבי את המכשיר לרוחב<br>כדי לשחק
+    </div>
 
-        <div id="ui-layer">
-            <div class="header" id="level-title">
-                שאלה
-                <a href="admin.html" style="float: left; color: white; text-decoration: none; font-size: 14px; margin-top: 5px;">⚙️ אדמין</a>
-            </div>
-            <div class="content">
-                <p id="ui-instructions">טוען...</p>
-                
-                <div class="instructions-box">
-                    <strong>איך משחקים?</strong><br>
-                    1. קליק על רכב לבחירה (יופיעו חצים ירוקים עם הכיוונים הזמינים).<br>
-                    2. 👆 <b>החליקי</b> (Swipe) לכיוון הנסיעה<br>
-                    או חיצים: ⬅️⬆️➡️<br>
-                    או לחץ על החץ הירוק<br>
-                    או גרור עם העכבר לאורך המסלול
+    <div id="traffic-game-container">
+        <div id="how-to-play-bar">
+            <strong>איך משחקים?</strong>&nbsp;
+            1. קליקי על רכב לבחירה (יופיעו חצים ירוקים עם הכיוונים הזמינים).&nbsp;&nbsp;
+            2. 👆 <b>החליקי</b> (Swipe) לכיוון הנסיעה, או לחצי על החץ הירוק, או השתמשי בחיצי המקלדת ⬅️⬆️➡️
+        </div>
+        <div id="game-ui-row">
+            <!-- ב-Inspect: בדקי על #game-container את data-bg-image ו-data-level-id כדי לראות איזו תמונת רקע מוצגת -->
+            <div id="game-container"></div>
+
+            <div id="ui-layer">
+                <div class="header" id="level-title">
+                    שאלה
+                    <a href="admin.html" style="float: left; color: white; text-decoration: none; font-size: 14px; margin-top: 5px;">⚙️ אדמין</a>
                 </div>
-                
-                <div id="status-msg" class="status-box"></div>
-                <!-- ב-Inspect: אחרי סיום שלב בדקי ב-#solution-img את ה־src לראות איזו תמונת פתרון מוצגת -->
-                <img id="solution-img" alt="Solution">
-                
-                <div id="buttons-container">
-                    <button class="btn btn-secondary" id="retry-btn" onclick="initLevel()">נסה שוב</button>
-                    <button class="btn btn-primary" id="next-btn" onclick="nextLevel()">לשאלה הבאה</button>
+                <div class="content">
+                    <p id="ui-instructions">טוען...</p>
+
+                    <div id="status-msg" class="status-box"></div>
+                    <!-- ב-Inspect: אחרי סיום שלב בדקי ב-#solution-img את ה־src לראות איזו תמונת פתרון מוצגת -->
+                    <img id="solution-img" alt="Solution">
+
+                    <div id="buttons-container">
+                        <button class="btn btn-secondary" id="retry-btn" onclick="initLevel()">נסה שוב</button>
+                        <button class="btn btn-primary" id="next-btn" onclick="nextLevel()">לשאלה הבאה</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -130,6 +152,20 @@
         if (window.location.protocol === 'file:') {
             document.getElementById('file-protocol-msg').classList.add('show');
         }
+
+        // זיהוי מובייל: אם מסך פורטרט – הצג הנחיה לסובב
+        function checkOrientation() {
+            const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const overlay = document.getElementById('rotate-overlay');
+            if (isMobile && window.innerHeight > window.innerWidth) {
+                overlay.style.display = 'flex';
+            } else {
+                overlay.style.display = 'none';
+            }
+        }
+        window.addEventListener('resize', checkOrientation);
+        window.addEventListener('orientationchange', checkOrientation);
+        checkOrientation();
     </script>
     <script>
         // ==========================================
@@ -681,37 +717,46 @@
                 }
             }
 
-            // עיגול יעד אחד לכל מכונית — רק על נקודת הסיום של כיוון הפתרון
+            // עיגולי יעד: עיגול צבעוני לנקודת הפתרון הנכונה; עיגול אפור לנקודות "wrong"
             const carColors = { red: 0xff3333, yellow: 0xffdd00, blue: 0x44aaff, grey: 0xaaaaaa };
             const solutionDirMap = {};
             levelData.solution.forEach(s => { solutionDirMap[s.color] = s.direction; });
 
             for (let carId in activePaths) {
                 const solutionDir = solutionDirMap[carId];
-                if (!solutionDir || !activePaths[carId][solutionDir]) continue;
-                const color = carColors[carId] || 0xffffff;
-                const endPt = activePaths[carId][solutionDir].getPoint(1);
-                if (!endPt) continue;
+                for (let dir in activePaths[carId]) {
+                    const isCorrect = (dir === solutionDir);
+                    const isWrong = dir.endsWith('_wrong');
+                    // הצג עיגול רק לנקודת הפתרון הנכון ולנקודות ה"שגויות" – לא לשאר הכיוונים
+                    if (!isCorrect && !isWrong) continue;
 
-                const ring = gameScene.add.graphics();
-                ring.lineStyle(4, color, 1);
-                ring.strokeCircle(0, 0, 20);
-                ring.fillStyle(color, 0.3);
-                ring.fillCircle(0, 0, 20);
-                ring.x = endPt.x;
-                ring.y = endPt.y;
-                ring.setDepth(0.5);
+                    const endPt = activePaths[carId][dir].getPoint(1);
+                    if (!endPt) continue;
 
-                gameScene.tweens.add({
-                    targets: ring,
-                    scaleX: 1.45, scaleY: 1.45,
-                    alpha: 0.35,
-                    duration: 750,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'Sine.easeInOut'
-                });
-                destinationMarkers.push(ring);
+                    const color = isCorrect ? (carColors[carId] || 0xffffff) : 0x999999;
+                    const fillAlpha = isCorrect ? 0.3 : 0.15;
+                    const lineAlpha = isCorrect ? 1 : 0.5;
+
+                    const ring = gameScene.add.graphics();
+                    ring.lineStyle(4, color, lineAlpha);
+                    ring.strokeCircle(0, 0, 20);
+                    ring.fillStyle(color, fillAlpha);
+                    ring.fillCircle(0, 0, 20);
+                    ring.x = endPt.x;
+                    ring.y = endPt.y;
+                    ring.setDepth(0.5);
+
+                    gameScene.tweens.add({
+                        targets: ring,
+                        scaleX: 1.45, scaleY: 1.45,
+                        alpha: isCorrect ? 0.35 : 0.2,
+                        duration: 750,
+                        yoyo: true,
+                        repeat: -1,
+                        ease: 'Sine.easeInOut'
+                    });
+                    destinationMarkers.push(ring);
+                }
             }
 
             // יצירת מכוניות
@@ -785,10 +830,12 @@
             const distance = 80;
             
             // מיפוי כיוונים לזווית: ישר=קדימה; שמאל=צד שמאל (קדימה-90°), ימין=צד ימין (קדימה+90°)
+            // left_wrong מוצג בזווית קצת שונה מ-left כדי שהחצים לא יתחפסו
             const dirToMathAngle = {
-                'straight': forwardRad,
-                'left': forwardRad - Math.PI / 2,
-                'right': forwardRad + Math.PI / 2
+                'straight':   forwardRad,
+                'left':       forwardRad - Math.PI / 2,
+                'left_wrong': forwardRad - Math.PI / 2 + 0.35,
+                'right':      forwardRad + Math.PI / 2
             };
             
             availableDirs.forEach((dir) => {
@@ -814,7 +861,8 @@
                 arrow.setDepth(2);
                 
                 // טקסט של הכיוון
-                const labelText = dir === 'straight' ? 'ישר' : dir === 'left' ? 'שמאל' : 'ימין';
+                const labelText = dir === 'straight' ? 'ישר' :
+                                  (dir === 'left' || dir === 'left_wrong') ? 'שמאל' : 'ימין';
                 const label = gameScene.add.text(arrowX, arrowY - 25, labelText, {
                     fontSize: '14px',
                     fill: '#00ff00',
@@ -862,10 +910,19 @@
 
         function handleSwipe(diffX, diffY) {
             if (!selectedCar || !activePaths[selectedCar.name]) return;
-            
+
             const swipeLength = Math.sqrt(diffX * diffX + diffY * diffY);
             if (swipeLength < 25) return; // swipe חלש מדי
-            
+
+            const availableDirs = Object.keys(activePaths[selectedCar.name]);
+            if (availableDirs.length === 0) return;
+
+            // אם יש רק כיוון אחד — כל swipe מופעל עליו (ללא צורך בבדיקת זווית)
+            if (availableDirs.length === 1) {
+                moveCar(selectedCar, availableDirs[0]);
+                return;
+            }
+
             // כיוון ה-swipe במערכת מתמטית (0 = ימין)
             const swipeAngle = Math.atan2(diffY, diffX);
             // זווית "קדימה" של הרכב באותה מערכת
@@ -873,25 +930,31 @@
             // זווית ה-swipe יחסית לרכב: 0 = החלקה בדיוק לכיוון שהרכב פונה
             let relativeAngle = swipeAngle - carForwardRad;
             relativeAngle = ((relativeAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-            
-            const availableDirs = Object.keys(activePaths[selectedCar.name]);
-            if (availableDirs.length === 0) return;
-            
-            const dirAngles = { 'straight': 0, 'left': -Math.PI / 2, 'right': Math.PI / 2 };
+
+            // left_wrong מטופל כמו left לצורך זיהוי swipe (שניהם בכיוון שמאל)
+            const dirAngles = {
+                'straight':   0,
+                'left':       -Math.PI / 2,
+                'left_wrong': -Math.PI / 2,
+                'right':      Math.PI / 2
+            };
             let bestDir = null;
             let minAngleDiff = Infinity;
-            
+
             availableDirs.forEach(dir => {
-                const dirAngle = dirAngles[dir];
+                const dirAngle = dirAngles[dir] !== undefined ? dirAngles[dir] : 0;
                 let angleDiff = Math.abs(relativeAngle - dirAngle);
                 if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                // כשיש left ו-left_wrong, swipe שמאלה תמיד יבחר ב-left (הנכון)
+                // left_wrong נבחר רק דרך לחיצה על החץ שלו
+                if (dir === 'left_wrong') return;
                 if (angleDiff < minAngleDiff) {
                     minAngleDiff = angleDiff;
                     bestDir = dir;
                 }
             });
-            
-            // קבלה של swipe בתוך ~90° מהכיוון (פחות מחמיר מ-PI/3)
+
+            // קבלה של swipe בתוך ~90° מהכיוון
             if (minAngleDiff < Math.PI / 2 && bestDir) {
                 moveCar(selectedCar, bestDir);
             }
