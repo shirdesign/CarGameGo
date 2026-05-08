@@ -13,19 +13,19 @@
     ],
     "paths": {
       "red": {
-        "straight": { "type": "line",   "start": [707,271], "end": [0,271] },
-        "left":     { "type": "spline", "start": [707,271], "points": [490,271, 390,325, 330,400, 330,600] },
-        "right":    { "type": "curve",  "start": [707,271], "p1": [490,252], "end": [451,0] }
+        "straight": { "type": "line",   "start": [707,271], "end": [40,265] },
+        "left":     { "type": "spline", "start": [707,271], "points": [490,271, 390,325, 330,400, 330,545] },
+        "right":    { "type": "curve",  "start": [707,271], "p1": [490,252], "end": [451,82] }
       },
       "yellow": {
-        "straight": { "type": "line",   "start": [98,362], "end": [800,362] },
-        "left":     { "type": "spline", "start": [98,362],  "points": [305,362, 360,325, 415,272, 451,0] },
-        "right":    { "type": "curve",  "start": [98,362],  "p1": [305,395], "end": [330,600] }
+        "straight": { "type": "line",   "start": [98,362], "end": [760,362] },
+        "left":     { "type": "spline", "start": [98,362],  "points": [305,362, 360,325, 415,272, 463,90] },
+        "right":    { "type": "curve",  "start": [98,362],  "p1": [305,395], "end": [330,545] }
       },
       "blue": {
-        "straight": { "type": "line",   "start": [451,575], "end": [451,0] },
-        "left":     { "type": "spline", "start": [451,575], "points": [451,395, 415,325, 355,271, 0,271] },
-        "right":    { "type": "curve",  "start": [451,575], "p1": [455,395], "end": [800,362] }
+        "straight": { "type": "line",   "start": [451,575], "end": [508,90] },
+        "left":     { "type": "spline", "start": [451,575], "points": [451,395, 415,325, 355,271, 40,265] },
+        "right":    { "type": "curve",  "start": [451,575], "p1": [455,395], "end": [760,362] }
       }
     },
     "solution": [
@@ -48,19 +48,19 @@
     ],
     "paths": {
       "red": {
-        "straight": { "type": "line",   "start": [692,269], "end": [0,269] },
-        "left":     { "type": "spline", "start": [692,269], "points": [490,271, 390,325, 330,400, 330,600] },
-        "right":    { "type": "curve",  "start": [692,269], "p1": [490,252], "end": [451,0] }
+        "straight": { "type": "line",   "start": [692,269], "end": [40,265] },
+        "left":     { "type": "spline", "start": [692,269], "points": [490,271, 390,325, 330,400, 330,545] },
+        "right":    { "type": "curve",  "start": [692,269], "p1": [490,252], "end": [451,82] }
       },
       "yellow": {
-        "straight": { "type": "line",   "start": [93,358], "end": [800,358] },
-        "left":     { "type": "spline", "start": [93,358],  "points": [305,362, 360,325, 415,272, 451,0] },
-        "right":    { "type": "curve",  "start": [93,358],  "p1": [305,395], "end": [330,600] }
+        "straight": { "type": "line",   "start": [93,358], "end": [760,358] },
+        "left":     { "type": "spline", "start": [93,358],  "points": [305,362, 360,325, 415,272, 474,48] },
+        "right":    { "type": "curve",  "start": [93,358],  "p1": [305,395], "end": [330,545] }
       },
       "blue": {
-        "straight": { "type": "line",   "start": [447,565], "end": [451,0] },
-        "left":     { "type": "spline", "start": [447,565], "points": [451,395, 415,325, 355,271, 0,271] },
-        "right":    { "type": "curve",  "start": [447,565], "p1": [455,395], "end": [800,362] }
+        "straight": { "type": "line",   "start": [447,565], "end": [451,82] },
+        "left":     { "type": "spline", "start": [447,565], "points": [451,395, 415,325, 355,271, 82,265] },
+        "right":    { "type": "curve",  "start": [447,565], "p1": [455,395], "end": [760,362] }
       }
     },
     "solution": [
@@ -82,14 +82,14 @@
     ],
     "paths": {
       "grey": {
-        "straight": { "type": "line",   "start": [330,0], "end": [330,600] },
-        "left":     { "type": "spline", "start": [330,0], "points": [330,252, 370,325, 418,362, 800,362] },
-        "right":    { "type": "curve",  "start": [330,0], "p1": [325,255], "end": [0,271] }
+        "straight": { "type": "line",   "start": [330,0], "end": [290,548] },
+        "left":     { "type": "spline", "start": [330,0], "points": [330,252, 370,325, 418,362, 760,362] },
+        "right":    { "type": "curve",  "start": [330,0], "p1": [325,255], "end": [40,271] }
       },
       "blue": {
-        "straight": { "type": "line",   "start": [90,362], "end": [800,362] },
-        "left":     { "type": "spline", "start": [90,362], "points": [305,362, 360,325, 415,272, 451,0] },
-        "right":    { "type": "curve",  "start": [90,362], "p1": [305,395], "end": [330,600] }
+        "straight": { "type": "line",   "start": [90,362], "end": [760,362] },
+        "left":     { "type": "spline", "start": [90,362], "points": [305,362, 360,325, 415,272, 515,99] },
+        "right":    { "type": "curve",  "start": [90,362], "p1": [305,395], "end": [330,545] }
       }
     },
     "solution": [
@@ -110,14 +110,14 @@
     ],
     "paths": {
       "blue": {
-        "straight": { "type": "line",   "start": [707,271], "end": [0,271] },
-        "left":     { "type": "spline", "start": [707,271], "points": [490,271, 390,325, 330,400, 330,600] },
-        "right":    { "type": "curve",  "start": [707,271], "p1": [490,252], "end": [451,0] }
+        "straight": { "type": "line",   "start": [707,271], "end": [134,262] },
+        "left":     { "type": "spline", "start": [707,271], "points": [490,271, 390,325, 330,400, 330,545] },
+        "right":    { "type": "curve",  "start": [707,271], "p1": [490,252], "end": [451,82] }
       },
       "yellow": {
-        "straight": { "type": "line",   "start": [451,600], "end": [451,0] },
-        "left":     { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 0,271] },
-        "right":    { "type": "curve",  "start": [451,600], "p1": [455,395], "end": [800,362] }
+        "straight": { "type": "line",   "start": [451,600], "end": [451,82] },
+        "left":     { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 84,261] },
+        "right":    { "type": "curve",  "start": [451,600], "p1": [455,395], "end": [760,362] }
       }
     },
     "solution": [
@@ -138,14 +138,14 @@
     ],
     "paths": {
       "yellow": {
-        "straight": { "type": "line",   "start": [90,362], "end": [800,362] },
-        "left":     { "type": "spline", "start": [90,362], "points": [305,362, 360,325, 415,272, 451,0] },
-        "right":    { "type": "curve",  "start": [90,362], "p1": [305,395], "end": [330,600] }
+        "straight": { "type": "line",   "start": [90,362], "end": [751,352] },
+        "left":     { "type": "spline", "start": [90,362], "points": [305,362, 360,325, 415,272, 451,82] },
+        "right":    { "type": "curve",  "start": [90,362], "p1": [305,395], "end": [330,545] }
       },
       "red": {
-        "straight": { "type": "line",   "start": [451,600], "end": [451,0] },
-        "left":     { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 0,271] },
-        "right":    { "type": "curve",  "start": [451,600], "p1": [455,395], "end": [800,362] }
+        "straight": { "type": "line",   "start": [451,600], "end": [461,39] },
+        "left":     { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 40,271] },
+        "right":    { "type": "curve",  "start": [451,600], "p1": [455,395], "end": [760,362] }
       }
     },
     "solution": [
@@ -166,10 +166,10 @@
     ],
     "paths": {
       "red": {
-        "left": { "type": "spline", "start": [330,0], "points": [330,252, 370,325, 418,362, 800,362] }
+        "left": { "type": "spline", "start": [330,0], "points": [330,252, 370,325, 418,362, 752,354] }
       },
       "yellow": {
-        "left": { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 0,271] }
+        "left": { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 43,262] }
       }
     },
     "solution": [
@@ -190,10 +190,10 @@
     ],
     "paths": {
       "red": {
-        "left": { "type": "spline", "start": [330,0], "points": [330,252, 370,325, 418,362, 800,362] }
+        "left": { "type": "spline", "start": [330,0], "points": [330,252, 370,325, 418,362, 751,270] }
       },
       "yellow": {
-        "left": { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 0,271] }
+        "left": { "type": "spline", "start": [451,600], "points": [451,395, 415,325, 355,271, 43,266] }
       }
     },
     "solution": [
@@ -213,7 +213,7 @@
     ],
     "paths": {
       "yellow": {
-        "left": { "type": "spline", "start": [800,271], "points": [490,271, 390,325, 330,400, 330,600] }
+        "left": { "type": "spline", "start": [800,271], "points": [490,271, 390,325, 332,400, 342,562] }
       }
     },
     "solution": [
