@@ -2,20 +2,25 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Traffic Logic Game</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
-        body { 
-            margin: 0; padding: 0; background-color: #e0e0e0; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh;
-            touch-action: none; 
+        body {
+            margin: 0; padding: 0; background-color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;          /* מונע גלילה אופקית */
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh;
+            touch-action: pan-y;         /* מאפשר גלילה אנכית בגוף הדף */
         }
         
         #traffic-game-container {
             display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            align-items: center; justify-content: flex-start;
             width: 1200px; max-width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         #game-ui-row {
@@ -40,23 +45,45 @@
         
         #game-container {
             flex: 1; display: flex; justify-content: center; align-items: center;
-            min-height: 300px; max-height: 600px; aspect-ratio: 4/3;
+            max-width: 800px; aspect-ratio: 4/3;
             border-radius: 12px; overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); background: #888; cursor: grab;
+            touch-action: none;          /* swipe על הקנבס בלבד */
         }
         
         #game-container:active { cursor: grabbing; }
         
         #ui-layer {
-            width: 320px; height: 550px; background: white;
+            width: 320px; min-height: 200px; background: white;
             box-shadow: -5px 0 15px rgba(0,0,0,0.1); border-radius: 12px;
             overflow-y: auto; margin-right: 20px; display: flex; flex-direction: column;
         }
 
+        /* טאבלט ומטה – ערימה אנכית */
         @media (max-width: 1100px) {
+            body { align-items: flex-start; }
+            #traffic-game-container { width: 100%; max-width: 100%; padding: 0; }
+            #how-to-play-bar { border-radius: 0; margin-bottom: 0; }
             #game-ui-row { flex-direction: column; }
-            #game-container { width: 100%; height: auto; aspect-ratio: 4/3; }
-            #ui-layer { width: 100%; height: auto; margin-right: 0; margin-top: 20px; }
+            #game-container {
+                width: 100%; max-width: 100%; border-radius: 0;
+                box-shadow: none; flex: none;
+            }
+            #ui-layer {
+                width: 100%; height: auto; min-height: unset;
+                margin-right: 0; margin-top: 0;
+                border-radius: 0; box-shadow: none;
+                border-top: 2px solid #eee;
+            }
+        }
+
+        /* מובייל קטן – גופנים וריפוד מוקטנים */
+        @media (max-width: 600px) {
+            #how-to-play-bar { font-size: 12px; padding: 7px 12px; line-height: 1.5; }
+            .header { font-size: 18px; padding: 12px 16px; }
+            .content { padding: 12px 14px; font-size: 14px; }
+            .btn { font-size: 15px; padding: 10px; }
+            #solution-img { margin-top: 10px; }
         }
 
         .header { background-color: #ff6b6b; color: white; padding: 20px; font-size: 24px; font-weight: bold; text-align: center; }
