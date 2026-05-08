@@ -60,26 +60,34 @@
             overflow-y: auto; margin-right: 20px; display: flex; flex-direction: column;
         }
 
-        /* טאבלט ומטה – ערימה אנכית */
+        /* טאבלט ומטה: המשחק מוצמד לגובה, הסידבר ממלא את הרוחב שנשאר מימין */
         @media (max-width: 1100px) {
             body { align-items: flex-start; }
             #traffic-game-container { width: 100%; max-width: 100%; padding: 0; }
-            #how-to-play-bar { border-radius: 0; margin-bottom: 0; font-size: 12px; padding: 7px 12px; line-height: 1.4; }
-            #game-ui-row { flex-direction: column; align-items: center; }
-            #game-container { border-radius: 0; box-shadow: none; }
+            #how-to-play-bar {
+                border-radius: 0; margin-bottom: 0;
+                font-size: 12px; padding: 6px 12px; line-height: 1.4;
+            }
+            /* שורת המשחק נשארת row — משחק + סידבר זה לצד זה */
+            #game-ui-row { align-items: stretch; }
+            #game-container { border-radius: 0; box-shadow: none; flex-shrink: 0; }
             #ui-layer {
-                width: 100%; height: auto; min-height: unset;
-                margin-right: 0; margin-top: 0;
+                flex: 1;                     /* ממלא את כל הרוחב שנשאר */
+                width: auto; min-width: 0;
+                height: auto; min-height: unset;
+                margin-right: 0;
                 border-radius: 0; box-shadow: none;
-                border-top: 2px solid #eee;
+                border-right: 2px solid #eee;
+                overflow-y: auto;
             }
         }
 
-        /* מובייל קטן */
+        /* מובייל קטן – כותרת ותוכן יותר קומפקטיים */
         @media (max-width: 600px) {
-            .header { font-size: 18px; padding: 10px 14px; }
-            .content { padding: 10px 14px; font-size: 14px; }
-            .btn { font-size: 15px; padding: 10px; }
+            .header { font-size: 15px; padding: 8px 12px; }
+            .content { padding: 8px 12px; font-size: 13px; }
+            .btn { font-size: 14px; padding: 9px; }
+            #solution-img { margin-top: 8px; }
         }
 
         .header { background-color: #ff6b6b; color: white; padding: 20px; font-size: 24px; font-weight: bold; text-align: center; }
