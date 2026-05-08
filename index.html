@@ -44,11 +44,12 @@
         }
         
         #game-container {
-            flex: 1; display: flex; justify-content: center; align-items: center;
-            max-width: 800px; aspect-ratio: 4/3;
+            /* גודל נקבע בJS לפי גובה המסך */
+            width: 800px; height: 600px;
+            flex-shrink: 0;
             border-radius: 12px; overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); background: #888; cursor: grab;
-            touch-action: none;          /* swipe על הקנבס בלבד */
+            touch-action: none;
         }
         
         #game-container:active { cursor: grabbing; }
@@ -63,12 +64,9 @@
         @media (max-width: 1100px) {
             body { align-items: flex-start; }
             #traffic-game-container { width: 100%; max-width: 100%; padding: 0; }
-            #how-to-play-bar { border-radius: 0; margin-bottom: 0; }
-            #game-ui-row { flex-direction: column; }
-            #game-container {
-                width: 100%; max-width: 100%; border-radius: 0;
-                box-shadow: none; flex: none;
-            }
+            #how-to-play-bar { border-radius: 0; margin-bottom: 0; font-size: 12px; padding: 7px 12px; line-height: 1.4; }
+            #game-ui-row { flex-direction: column; align-items: center; }
+            #game-container { border-radius: 0; box-shadow: none; }
             #ui-layer {
                 width: 100%; height: auto; min-height: unset;
                 margin-right: 0; margin-top: 0;
@@ -77,13 +75,11 @@
             }
         }
 
-        /* מובייל קטן – גופנים וריפוד מוקטנים */
+        /* מובייל קטן */
         @media (max-width: 600px) {
-            #how-to-play-bar { font-size: 12px; padding: 7px 12px; line-height: 1.5; }
-            .header { font-size: 18px; padding: 12px 16px; }
-            .content { padding: 12px 14px; font-size: 14px; }
+            .header { font-size: 18px; padding: 10px 14px; }
+            .content { padding: 10px 14px; font-size: 14px; }
             .btn { font-size: 15px; padding: 10px; }
-            #solution-img { margin-top: 10px; }
         }
 
         .header { background-color: #ff6b6b; color: white; padding: 20px; font-size: 24px; font-weight: bold; text-align: center; }
@@ -539,9 +535,43 @@
                 }
             }
             if (!LEVELS || !Array.isArray(LEVELS)) LEVELS = DEFAULT_LEVELS;
-            new Phaser.Game(config);
+            adjustGameSize();
+            window.phaserGame = new Phaser.Game(config);
         }
         loadLevelsAndStartGame();
+
+        // מחשב את גודל ה-container בדיוק לפי המסך ומרענן את Phaser
+        function adjustGameSize() {
+            const bar       = document.getElementById('how-to-play-bar');
+            const container = document.getElementById('game-container');
+            const barH   = bar ? bar.offsetHeight : 0;
+            const maxW   = window.innerWidth;
+            const maxH   = window.innerHeight - barH - 4;
+
+            // שמור על יחס 4:3 בתוך maxW × maxH
+            let w, h;
+            if (maxW / maxH > 4 / 3) {
+                h = maxH; w = Math.round(h * 4 / 3);
+            } else {
+                w = maxW; h = Math.round(w * 3 / 4);
+            }
+
+            // על דסקטופ לא נגדל מעל 800×600
+            w = Math.min(w, 800);
+            h = Math.min(h, 600);
+
+            container.style.width  = w + 'px';
+            container.style.height = h + 'px';
+
+            // רק refresh — Scale.FIT יתאים את ה-CSS scale של הקנבס לתוך ה-container
+            // (לא resize, כי זה ישנה את מערכת הקואורדינטות 800×600)
+            if (window.phaserGame) {
+                window.phaserGame.scale.refresh();
+            }
+        }
+
+        window.addEventListener('resize', adjustGameSize);
+        window.addEventListener('orientationchange', () => setTimeout(adjustGameSize, 200));
 
         // --- מנוע המשחק ---
         let currentLevelIndex = 0;
