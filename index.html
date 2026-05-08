@@ -794,14 +794,13 @@
                     const endPt = activePaths[carId][dir].getPoint(1);
                     if (!endPt) continue;
 
-                    const color = isCorrect ? (carColors[carId] || 0xffffff) : 0x999999;
-                    const fillAlpha = isCorrect ? 0.3 : 0.15;
-                    const lineAlpha = isCorrect ? 1 : 0.5;
+                    // שני העיגולים נראים זהה — המשתמש לא יכול לדעת מה נכון לפני שבחר
+                    const color = carColors[carId] || 0xffffff;
 
                     const ring = gameScene.add.graphics();
-                    ring.lineStyle(4, color, lineAlpha);
+                    ring.lineStyle(4, color, 1);
                     ring.strokeCircle(0, 0, 20);
-                    ring.fillStyle(color, fillAlpha);
+                    ring.fillStyle(color, 0.3);
                     ring.fillCircle(0, 0, 20);
                     ring.x = endPt.x;
                     ring.y = endPt.y;
@@ -810,7 +809,7 @@
                     gameScene.tweens.add({
                         targets: ring,
                         scaleX: 1.45, scaleY: 1.45,
-                        alpha: isCorrect ? 0.35 : 0.2,
+                        alpha: 0.35,
                         duration: 750,
                         yoyo: true,
                         repeat: -1,
