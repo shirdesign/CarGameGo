@@ -160,10 +160,15 @@
     "solutionText": "נכון מאוד! הרכב הצהוב פונה מחד סטרי אל חד סטרי, לכן הוא יצמד לשמאל ויפנה מהנתיב השמאלי אל הנתיב השמאלי. הרכב האדום פונה מדו סטרי אל דו סטרי, לכן יפנה שמאלה בהצמדות לימין, מהנתיב הימני אל הנתיב הימני.",
     "bgImage": "images/background6.png",
     "solutionImage": "images/solution6.png",
+    "orderedSolution": false,
     "cars": [
       { "id": "red",    "texture": "red",    "x": 330, "y": 20,  "angle": 180 },
       { "id": "yellow", "texture": "yellow", "x": 451, "y": 580, "angle": 0   }
     ],
+    "pathLabels": {
+      "red":    { "left": "פניה לנתיב ימני",   "left_wrong": "פניה לנתיב שמאלי" },
+      "yellow": { "left": "פניה לנתיב שמאלי",  "left_wrong": "פניה לנתיב ימני"  }
+    },
     "paths": {
       "red": {
         "left":       { "type": "spline", "start": [330,20], "points": [330,252, 370,325, 418,362, 752,354] },
@@ -186,10 +191,15 @@
     "solutionText": "נכון מאוד! הרכב הצהוב פונה מדו סטרי אל דו סטרי, לכן יפנה שמאלה בהצמדות לימין, מהנתיב הימני אל הנתיב הימני. הרכב האדום פונה מדו סטרי אל חד סטרי, לכן יפנה מהנתיב הימני אל הנתיב השמאלי.",
     "bgImage": "images/background7.png",
     "solutionImage": "images/solution7.png",
+    "orderedSolution": false,
     "cars": [
       { "id": "red",    "texture": "red",    "x": 330, "y": 20,  "angle": 180 },
       { "id": "yellow", "texture": "yellow", "x": 451, "y": 580, "angle": 0   }
     ],
+    "pathLabels": {
+      "red":    { "left": "פניה לנתיב שמאלי", "left_wrong": "פניה לנתיב ימני"  },
+      "yellow": { "left": "פניה לנתיב ימני",  "left_wrong": "פניה לנתיב שמאלי" }
+    },
     "paths": {
       "red": {
         "left":       { "type": "spline", "start": [330,20], "points": [330,252, 370,325, 418,362, 751,270] },
@@ -212,9 +222,13 @@
     "solutionText": "נכון מאוד! הרכב הצהוב פונה מדו סטרי אל חד סטרי, מאחר וזה כביש שיש בו שטח הפרדה, לכן יפנה מהנתיב הימני אל הנתיב השמאלי.",
     "bgImage": "images/backgound8.png",
     "solutionImage": "images/solution8.png",
+    "orderedSolution": false,
     "cars": [
       { "id": "yellow", "texture": "yellow", "x": 780, "y": 271, "angle": -90 }
     ],
+    "pathLabels": {
+      "yellow": { "left": "פניה לנתיב שמאלי", "left_wrong": "פניה לנתיב ימני" }
+    },
     "paths": {
       "yellow": {
         "left":       { "type": "spline", "start": [780,271], "points": [490,271, 390,325, 332,400, 342,562] },

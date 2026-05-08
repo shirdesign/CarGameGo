@@ -38,9 +38,10 @@
             font-size: 28px; z-index: 9998; text-align: center; gap: 16px;
         }
         
-        #game-container { 
+        #game-container {
             flex: 1; display: flex; justify-content: center; align-items: center;
-            height: 600px; border-radius: 12px; overflow: hidden;
+            min-height: 300px; max-height: 600px; aspect-ratio: 4/3;
+            border-radius: 12px; overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); background: #888; cursor: grab;
         }
         
@@ -85,6 +86,27 @@
         
         #buttons-container { margin-top: auto; padding-top: 20px; display: none; }
 
+        /* מסך סיום + קונפטי */
+        #end-screen {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10,10,30,0.88);
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9997; text-align: center; gap: 18px;
+        }
+        #end-screen.show { display: flex; }
+        #end-screen h1 { color: #ff6b6b; font-size: 48px; margin: 0; text-shadow: 0 2px 12px rgba(255,107,107,0.5); }
+        #end-screen p  { color: #fff; font-size: 22px; margin: 0; }
+
+        .confetti-piece {
+            position: fixed; border-radius: 2px; pointer-events: none;
+            animation: confetti-fall linear forwards;
+        }
+        @keyframes confetti-fall {
+            0%   { transform: translateY(-60px) rotate(0deg) scale(1); opacity: 1; }
+            80%  { opacity: 1; }
+            100% { transform: translateY(105vh) rotate(900deg) scale(0.6); opacity: 0; }
+        }
+
         /* הודעה כשנפתח ישירות מקובץ (file://) – CORS חוסם טעינת תמונות */
         #file-protocol-msg {
             display: none;
@@ -110,6 +132,14 @@
         <p>בטרמינל, מתוך תיקיית המשחק (CarGameGo), הרצתי:</p>
         <code>python3 server.py</code>
         <p>ואז פתחי את הקישור למעלה בדפדפן.</p>
+    </div>
+
+    <!-- מסך סיום -->
+    <div id="end-screen">
+        <h1>🎉 כל הכבוד!</h1>
+        <p>הגעת לסוף המסלול!</p>
+        <p style="font-size:17px; color:#ccc;">סיימת את כל השלבים בהצלחה</p>
+        <button class="btn btn-primary" style="width:220px; margin-top:20px; font-size:20px;" onclick="restartGame()">שחק שוב מההתחלה</button>
     </div>
 
     <div id="rotate-overlay">
@@ -453,6 +483,10 @@
             parent: 'game-container',
             width: 800, height: 600,
             backgroundColor: '#888888',
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
             scene: { preload: preload, create: create, update: update }
         };
 
@@ -838,37 +872,48 @@
                 'right':      forwardRad + Math.PI / 2
             };
             
+            // קריאת תוויות מותאמות אישית אם קיימות בנתוני השלב
+            const levelPathLabels = (LEVELS[currentLevelIndex].pathLabels || {})[car.name] || {};
+
             availableDirs.forEach((dir) => {
                 const angleRad = dirToMathAngle[dir] !== undefined ? dirToMathAngle[dir] : forwardRad;
                 const arrowX = car.x + Math.cos(angleRad) * distance;
                 const arrowY = car.y + Math.sin(angleRad) * distance;
-                
+
                 // יצירת חץ (משולש)
                 const arrow = gameScene.add.graphics();
                 const size = 15;
-                
+
                 arrow.lineStyle(3, 0x00ff00, 1);
                 arrow.fillStyle(0x00ff00, 0.5);
-                
-                // צייר משולש (Phaser Graphics API)
+
                 arrow.fillTriangle(0, -size, -size/2, size/2, size/2, size/2);
                 arrow.strokeTriangle(0, -size, -size/2, size/2, size/2, size/2);
-                
+
                 arrow.x = arrowX;
                 arrow.y = arrowY;
-                arrow.rotation = angleRad + Math.PI / 2; // התאם את הזווית (חץ מצביע לכיוון הנסיעה)
+                arrow.rotation = angleRad + Math.PI / 2;
                 arrow.setInteractive(new Phaser.Geom.Circle(0, 0, 28), Phaser.Geom.Circle.Contains);
                 arrow.setDepth(2);
-                
-                // טקסט של הכיוון
-                const labelText = dir === 'straight' ? 'ישר' :
-                                  (dir === 'left' || dir === 'left_wrong') ? 'שמאל' : 'ימין';
-                const label = gameScene.add.text(arrowX, arrowY - 25, labelText, {
-                    fontSize: '14px',
+
+                // תווית: מותאמת אישית → ברירת מחדל לפי שם הכיוון
+                const labelText = levelPathLabels[dir] ||
+                    (dir === 'straight' ? 'ישר' :
+                     dir === 'left'     ? 'שמאל' :
+                     dir === 'right'    ? 'ימין' :
+                     dir === 'left_wrong' ? 'שמאל' : dir);
+
+                // מיקום תווית: מעל החץ אך לא מחוץ לקנבס (צמוד לתחתית אם קרוב לפינה עליונה)
+                const labelOffsetY = arrowY < 50 ? 28 : -25;
+                const labelX = Math.max(40, Math.min(760, arrowX));
+                const labelY = Math.max(15, Math.min(585, arrowY + labelOffsetY));
+
+                const label = gameScene.add.text(labelX, labelY, labelText, {
+                    fontSize: '13px',
                     fill: '#00ff00',
                     fontWeight: 'bold',
-                    backgroundColor: '#000000',
-                    padding: { x: 5, y: 2 }
+                    backgroundColor: '#000000cc',
+                    padding: { x: 5, y: 3 }
                 });
                 label.setOrigin(0.5);
                 label.setDepth(2);
@@ -902,9 +947,40 @@
                 currentLevelIndex++;
                 initLevel();
             } else {
-                alert('סיימת את כל השלבים!');
-                currentLevelIndex = 0;
-                initLevel();
+                showEndScreen();
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('end-screen').classList.remove('show');
+            currentLevelIndex = 0;
+            initLevel();
+        }
+
+        function showEndScreen() {
+            document.getElementById('end-screen').classList.add('show');
+            launchConfetti();
+        }
+
+        function launchConfetti() {
+            const colors = ['#ff6b6b','#ffdd57','#48c774','#3273dc','#ff9f43','#ff69b4','#00d1b2','#b86bff'];
+            const shapes = [4, 6, 8, 10]; // widths
+            for (let i = 0; i < 180; i++) {
+                setTimeout(() => {
+                    const p = document.createElement('div');
+                    p.className = 'confetti-piece';
+                    const w = shapes[Math.floor(Math.random() * shapes.length)];
+                    p.style.left   = (Math.random() * 100) + 'vw';
+                    p.style.top    = '-20px';
+                    p.style.width  = w + 'px';
+                    p.style.height = (w * (Math.random() * 1.5 + 0.8)) + 'px';
+                    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    p.style.borderRadius = Math.random() > 0.4 ? '50%' : '2px';
+                    p.style.animationDuration = (Math.random() * 2.5 + 2) + 's';
+                    p.style.animationDelay    = (Math.random() * 0.8) + 's';
+                    document.body.appendChild(p);
+                    setTimeout(() => p.remove(), 6000);
+                }, i * 18);
             }
         }
 
@@ -1034,20 +1110,32 @@
             const buttonsContainer = document.getElementById('buttons-container');
             const retryBtn = document.getElementById('retry-btn');
             const nextBtn = document.getElementById('next-btn');
-            
-            const levelData = LEVELS[currentLevelIndex];
-            
-            let isCorrect = true;
-            let errorMsg = "";
 
-            for (let i = 0; i < levelData.solution.length; i++) {
-                const move = playerMoves[i];
-                const expected = levelData.solution[i];
-                if (move.color !== expected.color) { isCorrect = false; errorMsg = `טעות בסדר!`; break; }
-                if (move.direction !== expected.direction) { isCorrect = false; errorMsg = `טעות בכיוון!`; break; }
+            const levelData = LEVELS[currentLevelIndex];
+
+            let isCorrect = true;
+
+            if (levelData.orderedSolution === false) {
+                // שלבים 6-8: בדיקה לפי צבע הרכב ללא תלות בסדר
+                const solutionMap = {};
+                levelData.solution.forEach(s => { solutionMap[s.color] = s.direction; });
+                for (const move of playerMoves) {
+                    if (!solutionMap[move.color] || move.direction !== solutionMap[move.color]) {
+                        isCorrect = false; break;
+                    }
+                }
+            } else {
+                // שלבים 1-5: בדיקה לפי סדר מדויק (גם צבע וגם כיוון)
+                for (let i = 0; i < levelData.solution.length; i++) {
+                    const move = playerMoves[i];
+                    const expected = levelData.solution[i];
+                    if (move.color !== expected.color || move.direction !== expected.direction) {
+                        isCorrect = false; break;
+                    }
+                }
             }
 
-            // תמונת פתרון שונה לכל שלב – מוצגת אחרי סיום (נכון או כישלון)
+            // תמונת פתרון שונה לכל שלב
             const solutionImg = document.getElementById('solution-img');
             if (levelData.solutionImage) {
                 solutionImg.src = levelData.solutionImage;
@@ -1057,23 +1145,29 @@
             }
 
             statusBox.style.display = 'block';
-            buttonsContainer.style.display = 'block'; 
+            buttonsContainer.style.display = 'block';
 
             if (isCorrect) {
-                // הצלחה
                 statusBox.className = 'status-box success';
                 statusBox.innerText = levelData.solutionText || "כל הכבוד! תשובה נכונה.";
-                
-                retryBtn.style.display = 'none'; // רק כפתור הבא
-                nextBtn.style.display = 'block';
-                nextBtn.innerText = "לשאלה הבאה";
+
+                const isLastLevel = (currentLevelIndex === LEVELS.length - 1);
+                if (isLastLevel) {
+                    // השלב האחרון – אחרי 1.5 שניות מציגים מסך סיום עם קונפטי
+                    retryBtn.style.display = 'none';
+                    nextBtn.style.display  = 'none';
+                    setTimeout(showEndScreen, 1500);
+                } else {
+                    retryBtn.style.display = 'none';
+                    nextBtn.style.display  = 'block';
+                    nextBtn.innerText = "לשאלה הבאה";
+                }
             } else {
-                // כישלון
                 statusBox.className = 'status-box error';
-                statusBox.innerText = levelData.errorText || errorMsg; // מציג את השגיאה הספציפית
-                
+                statusBox.innerText = levelData.errorText || "טעות! נסי שוב.";
+
                 retryBtn.style.display = 'block';
-                nextBtn.style.display = 'block';
+                nextBtn.style.display  = 'block';
                 nextBtn.innerText = "דלג לשאלה הבאה";
             }
         }
