@@ -1264,14 +1264,32 @@
             renderLevelsList();
         }
         
-        /** שומר לשרת (save-levels.php). אם אין PHP – מוריד קובץ levels.json */
+        /** שומר את levels.json ישירות לתיקייה דרך השרת המקומי */
         async function saveLevels() {
             const statusEl = document.getElementById('save-status');
-            const errorEl = document.getElementById('save-error');
+            const errorEl  = document.getElementById('save-error');
             statusEl.style.display = 'none';
-            errorEl.style.display = 'none';
-            errorEl.textContent = '';
+            errorEl.style.display  = 'none';
 
+            // ניסיון 1: שרת Python מקומי (save-levels endpoint)
+            try {
+                const r = await fetch('/save-levels', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(levels, null, 2)
+                });
+                const res = await r.json().catch(() => ({}));
+                if (r.ok && res.ok) {
+                    statusEl.textContent = '✓ נשמר בהצלחה! עשי git push כדי לפרסם.';
+                    statusEl.style.display = 'block';
+                    setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+                    return;
+                }
+            } catch (e) {
+                // לא רץ בשרת מקומי – ממשיכים
+            }
+
+            // ניסיון 2: save-levels.php (שרת PHP)
             try {
                 const r = await fetch('save-levels.php', {
                     method: 'POST',
@@ -1280,29 +1298,24 @@
                 });
                 const res = await r.json().catch(() => ({}));
                 if (r.ok && res.ok) {
+                    statusEl.textContent = '✓ נשמר בהצלחה!';
                     statusEl.style.display = 'block';
                     setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
                     return;
                 }
-            } catch (e) {
-                console.warn('Save to server failed:', e.message);
-            }
+            } catch (e) { /* אין PHP */ }
 
-            // בדיקות מקומיות (אין PHP): שמירה בדפדפן – המשחק יקרא מכאן
-            localStorage.setItem('carGameLevels', JSON.stringify(levels));
-            statusEl.style.display = 'block';
-            statusEl.textContent = '✓ נשמר בדפדפן (בדיקות מקומיות). רענני את המשחק כדי לראות.';
-            setTimeout(() => { statusEl.style.display = 'none'; statusEl.textContent = '✓ נשמר בהצלחה!'; }, 3000);
-
-            errorEl.style.color = '#1565c0';
-            errorEl.textContent = 'בדיקות מקומיות: נשמר בדפדפן. רענני את המשחק (index.html) באותו דומיין כדי לראות. הקובץ levels.json יורד – להעלאה לשרת.';
-            errorEl.style.display = 'block';
+            // fallback: הורדת הקובץ
             const blob = new Blob([JSON.stringify(levels, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'levels.json';
             a.click();
             URL.revokeObjectURL(a.href);
+            errorEl.textContent = 'הקובץ levels.json הורד — החליפי אותו בתיקייה ועשי git push.';
+            errorEl.style.color  = '#1565c0';
+            errorEl.style.display = 'block';
+            setTimeout(() => { errorEl.style.display = 'none'; }, 6000);
         }
 
         function showSaveStatus() {
