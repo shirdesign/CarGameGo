@@ -1159,25 +1159,38 @@
             const availableDirs = Object.keys(activePaths[selectedCar.name]);
             if (availableDirs.length === 0) return;
 
-            let dir = null;
-            if (availableDirs.length === 1) {
-                dir = availableDirs[0]; // כל חץ מפעיל את הכיוון היחיד
-            } else {
-                if (key === 'ArrowUp' || key === 'ArrowDown') {
-                    if (availableDirs.includes('straight')) dir = 'straight';
-                } else if (key === 'ArrowLeft') {
-                    if (availableDirs.includes('left'))     dir = 'left';
-                    else if (availableDirs.includes('straight')) dir = 'straight';
-                } else if (key === 'ArrowRight') {
-                    if (availableDirs.includes('right'))    dir = 'right';
-                    else if (availableDirs.includes('straight')) dir = 'straight';
-                }
-            }
+            // מיפוי חיצי מקלדת לזווית מסך (רדיאנים, 0=ימין, חיובי=כיוון שעון)
+            const arrowAngles = {
+                'ArrowRight':  0,
+                'ArrowDown':   Math.PI / 2,
+                'ArrowLeft':   Math.PI,
+                'ArrowUp':    -Math.PI / 2
+            };
+            const targetAngle = arrowAngles[key];
+            if (targetAngle === undefined) return;
 
-            if (dir && activePaths[selectedCar.name][dir]) {
-                // התחל נהיגה ידנית על המסלול שנבחר
-                manualDrivingPath = activePaths[selectedCar.name][dir];
-                manualDrivingDir  = dir;
+            // בחר את המסלול שכיוון ההתחלה שלו הכי קרוב לחץ שנלחץ
+            // (לפי כיוון המסך בפועל — לא לפי שמות straight/left/right)
+            let chosenDir = null;
+            let minDiff   = Infinity;
+
+            availableDirs.forEach(dir => {
+                if (dir === 'left_wrong') return; // left_wrong רק דרך לחיצה על החץ
+                const path = activePaths[selectedCar.name][dir];
+                if (!path) return;
+                try {
+                    const tang      = path.getTangent(0.1); // כיוון 10% לתוך המסלול
+                    const pathAngle = Math.atan2(tang.y, tang.x);
+                    let diff = Math.abs(pathAngle - targetAngle);
+                    if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                    if (diff < minDiff) { minDiff = diff; chosenDir = dir; }
+                } catch(e) {}
+            });
+
+            // בצע רק אם הכיוון הכי קרוב הוא בתוך 90° מהחץ שנלחץ
+            if (chosenDir && minDiff < Math.PI / 2 && activePaths[selectedCar.name][chosenDir]) {
+                manualDrivingPath = activePaths[selectedCar.name][chosenDir];
+                manualDrivingDir  = chosenDir;
                 manualDrivingT    = 0;
                 hideDirectionArrows(selectedCar.name);
                 isInputLocked = true;
