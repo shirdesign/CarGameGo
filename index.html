@@ -723,30 +723,38 @@
                 if (currentPhase !== 'drive' || !isDraggingB || !drivingCar || !pointer.isDown) return;
 
                 const dirs = Object.keys(activePaths[drivingCar.name] || {});
+                if (dirs.length === 0) return;
 
-                // Always compute direction from pointer relative to car's current position
-                // so the player can steer mid-intersection by dragging left/right
-                const diffX = pointer.x - drivingCar.x;
-                const diffY = pointer.y - drivingCar.y;
-                const dist  = Math.sqrt(diffX * diffX + diffY * diffY);
+                // Position-based path selection: pick the path whose route passes
+                // closest to the pointer. Works for direction choice (left/right/straight)
+                // AND for lane choice (left vs left_wrong) — angle-based cannot distinguish lanes.
+                let chosenDir = dirs[0];
+                if (dirs.length > 1) {
+                    let minDist = Infinity;
+                    dirs.forEach(dir => {
+                        const p = activePaths[drivingCar.name][dir];
+                        if (!p) return;
+                        const tNearest = findClosestPointOnPath(p, pointer.x, pointer.y);
+                        if (tNearest === null) return;
+                        const pt = p.getPoint(tNearest);
+                        const d  = Phaser.Math.Distance.Between(pointer.x, pointer.y, pt.x, pt.y);
+                        if (d < minDist) { minDist = d; chosenDir = dir; }
+                    });
+                }
 
-                if (dist > 20) {
-                    const chosen = dirs.length === 1
-                        ? dirs[0]
-                        : pickDirByAngle(drivingCar, diffX, diffY, dirs);
-                    if (chosen && chosen !== drivingDir) {
-                        // Switch to new path — find closest point to current car position
-                        const newPath = activePaths[drivingCar.name][chosen];
-                        const newT    = findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y);
-                        if (newT !== null && newT >= 0) {
-                            drivingPath = newPath;
-                            drivingDir  = chosen;
-                            drivingT    = newT;
-                        }
-                    } else if (!drivingPath && chosen) {
-                        drivingPath = activePaths[drivingCar.name][chosen];
-                        drivingDir  = chosen;
-                    }
+                // Require a minimum drag distance before locking a path
+                // (avoids immediate path selection on tap-without-drag)
+                const totalDist = Phaser.Math.Distance.Between(dragStartX, dragStartY, pointer.x, pointer.y);
+                if (totalDist < 15 && !drivingPath) return;
+
+                if (chosenDir !== drivingDir) {
+                    const newPath = activePaths[drivingCar.name][chosenDir];
+                    const newT    = drivingPath
+                        ? (findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? 0)
+                        : 0;
+                    drivingPath = newPath;
+                    drivingDir  = chosenDir;
+                    drivingT    = newT;
                 }
 
                 // Move car to closest point on current path
