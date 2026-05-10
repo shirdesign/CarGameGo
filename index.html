@@ -725,19 +725,20 @@
                 const dirs = Object.keys(activePaths[drivingCar.name] || {});
                 if (dirs.length === 0) return;
 
-                // Position-based path selection: pick the path whose route passes
-                // closest to the pointer. Works for direction choice (left/right/straight)
-                // AND for lane choice (left vs left_wrong) — angle-based cannot distinguish lanes.
+                // Endpoint-distance path selection: pick the path whose destination
+                // circle (t=1 endpoint) is closest to the pointer.
+                // This lets the player aim at the circle they want — works for
+                // direction choice (straight/left/right) AND lane choice (left vs
+                // left_wrong, which share the same early trajectory and cannot be
+                // distinguished by path-proximity alone).
                 let chosenDir = dirs[0];
                 if (dirs.length > 1) {
                     let minDist = Infinity;
                     dirs.forEach(dir => {
                         const p = activePaths[drivingCar.name][dir];
                         if (!p) return;
-                        const tNearest = findClosestPointOnPath(p, pointer.x, pointer.y);
-                        if (tNearest === null) return;
-                        const pt = p.getPoint(tNearest);
-                        const d  = Phaser.Math.Distance.Between(pointer.x, pointer.y, pt.x, pt.y);
+                        const endPt = p.getPoint(1);
+                        const d = Phaser.Math.Distance.Between(pointer.x, pointer.y, endPt.x, endPt.y);
                         if (d < minDist) { minDist = d; chosenDir = dir; }
                     });
                 }
@@ -835,9 +836,22 @@
             const vec = arrowVecs[key];
             if (!vec) return;
 
-            const chosen = dirs.length === 1
-                ? dirs[0]
-                : pickDirByAngle(drivingCar, vec[0], vec[1], dirs);
+            // For levels with left_wrong paths, pickDirByAngle can't distinguish
+            // them (both "left" and "left_wrong" share the same DA angle). In those
+            // levels, drag is the primary selection mechanism (endpoint-distance).
+            // Keyboard just advances along whatever path is already selected (or
+            // defaults to the first option if none selected yet).
+            const hasLaneChoice = dirs.some(d => d.includes('_wrong'));
+            let chosen;
+            if (dirs.length === 1) {
+                chosen = dirs[0];
+            } else if (hasLaneChoice) {
+                // Keep currently-selected lane, or pick first option by default.
+                // Player must use drag to switch between left and left_wrong lanes.
+                chosen = drivingDir || dirs[0];
+            } else {
+                chosen = pickDirByAngle(drivingCar, vec[0], vec[1], dirs);
+            }
 
             if (!chosen) return;
 
