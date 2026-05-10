@@ -812,10 +812,12 @@
             const dirs = Object.keys(activePaths[drivingCar.name]);
             if (dirs.length === 0) return;
 
-            // Map arrows to vehicle-relative direction using CURRENT car heading.
-            // ArrowRight = turn vehicle right, ArrowLeft = turn vehicle left, ArrowUp = straight.
-            // This works regardless of which way the car faces on screen.
-            const carFwd = drivingCar.rotation - Math.PI / 2; // current forward in math-angle coords
+            // Map arrows to vehicle-relative directions.
+            // ArrowRight = vehicle right, ArrowLeft = vehicle left, ArrowUp = straight forward.
+            // IMPORTANT: use getCarForwardMathAngleRad — the same reference frame that
+            // pickDirByAngle and the DA table ("left"/-π/2, "right"/+π/2, "straight"/0) use.
+            // Using drivingCar.rotation directly would misalign the two frames.
+            const carFwd = getCarForwardMathAngleRad(drivingCar);
             const arrowVecs = {
                 'ArrowUp':    [Math.cos(carFwd),                Math.sin(carFwd)],
                 'ArrowRight': [Math.cos(carFwd + Math.PI / 2),  Math.sin(carFwd + Math.PI / 2)],
