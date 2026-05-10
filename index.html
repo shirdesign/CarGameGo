@@ -30,10 +30,10 @@
         }
 
         #how-to-play-bar {
-            background: #f8f9fa; border-right: 4px solid #ff6b6b;
-            padding: 10px 20px; margin-bottom: 10px; border-radius: 8px;
-            font-size: 14px; line-height: 1.6; color: #333; width: 100%;
-            box-sizing: border-box;
+            background: #fff8f0; border-right: 4px solid #e55353;
+            padding: 10px 18px; margin-bottom: 10px; border-radius: 10px;
+            font-size: 13px; line-height: 1.7; color: #444; width: 100%;
+            box-sizing: border-box; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
 
         #rotate-overlay {
@@ -90,30 +90,41 @@
             #solution-img { margin-top: 8px; }
         }
 
-        .header { background-color: #ff6b6b; color: white; padding: 20px; font-size: 24px; font-weight: bold; text-align: center; }
-        .content { padding: 20px; color: #333; font-size: 16px; line-height: 1.5; flex: 1; display: flex; flex-direction: column;}
+        .header {
+            background: linear-gradient(135deg, #e55353 0%, #c0392b 100%);
+            color: white; padding: 16px 20px; font-size: 22px; font-weight: bold;
+            text-align: center; letter-spacing: 0.5px;
+        }
+        .content { padding: 16px 20px; color: #333; font-size: 15px; line-height: 1.6; flex: 1; display: flex; flex-direction: column; gap: 10px; }
 
         /* כפתורים */
         .btn {
-            display: block; width: 100%; padding: 12px;
-            background-color: #333; color: white; text-align: center;
-            border: none; border-radius: 50px; font-size: 18px; cursor: pointer; transition: 0.2s; margin-top: 10px;
+            display: block; width: 100%; padding: 11px 14px;
+            color: white; text-align: center;
+            border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+            cursor: pointer; transition: background 0.18s, transform 0.12s; margin-top: 0;
         }
-        .btn:hover { transform: translateY(-2px); }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
 
-        .btn-primary { background-color: #ff6b6b; }
-        .btn-primary:hover { background-color: #ff4c4c; }
+        .btn-primary { background: #e55353; }
+        .btn-primary:hover { background: #c0392b; }
 
-        .btn-secondary { background-color: #6c757d; }
-        .btn-secondary:hover { background-color: #5a6268; }
+        .btn-secondary { background: #7f8c8d; }
+        .btn-secondary:hover { background: #636e72; }
 
-        .status-box { margin-top: 15px; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; display: none; }
-        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .btn-rules {
+            background: #2980b9; font-size: 14px; padding: 9px 14px;
+        }
+        .btn-rules:hover { background: #1a6fa0; }
 
-        #solution-img { width: 100%; margin-top: 15px; display: none; border-radius: 8px; border: 2px solid #eee; }
+        .status-box { padding: 12px 14px; border-radius: 10px; text-align: center; font-weight: bold; display: none; font-size: 14px; }
+        .success { background-color: #eafaf1; color: #1e8449; border: 1px solid #a9dfbf; }
+        .error   { background-color: #fdf2f2; color: #c0392b; border: 1px solid #f5c6cb; }
 
-        #buttons-container { margin-top: auto; padding-top: 20px; display: none; }
+        #solution-img { width: 100%; display: none; border-radius: 10px; border: 2px solid #eee; }
+
+        #buttons-container { display: none; flex-direction: column; gap: 8px; }
 
         /* מסך סיום + קונפטי */
         #end-screen {
@@ -153,48 +164,48 @@
         /* מסך שוטר */
         #police-screen {
             display: none; position: fixed; top:0; left:0; right:0; bottom:0;
-            background: rgba(10,10,30,0.92);
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(3px);
             flex-direction: column; justify-content: center; align-items: center;
             z-index: 9996;
         }
         #police-screen.show { display: flex; }
         .police-box {
-            background: #1a1a2e; border: 3px solid #ff4444; border-radius: 20px;
-            padding: 40px; text-align: center; max-width: 340px; width: 90%;
+            background: #fff; border-radius: 20px;
+            padding: 36px 32px 28px; text-align: center; max-width: 320px; width: 90%;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+            border-top: 6px solid #e55353;
+            display: flex; flex-direction: column; gap: 12px;
         }
+        .police-box h2 { color: #c0392b; margin: 0; font-size: 26px; }
+        .police-box p  { color: #555; margin: 0; font-size: 16px; line-height: 1.4; }
 
         /* modal חוקי עזר */
         #rules-modal {
             display: none; position: fixed; top:0; left:0; right:0; bottom:0;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
             justify-content: center; align-items: center; z-index: 9999;
         }
         #rules-modal.show { display: flex; }
         .modal-box {
             background: #fff; border-radius: 16px; padding: 24px;
             max-width: 420px; width: 90%; max-height: 80vh; overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.28);
         }
         .modal-header {
             display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #eee;
+            margin-bottom: 14px; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0;
         }
+        .modal-header h2 { color: #2980b9; }
         .close-btn {
-            background: none; border: none; font-size: 22px; cursor: pointer;
-            color: #666; padding: 4px 8px; border-radius: 6px;
+            background: #f0f0f0; border: none; font-size: 16px; cursor: pointer;
+            color: #555; padding: 5px 10px; border-radius: 8px; font-weight: bold;
         }
-        .close-btn:hover { background: #eee; }
+        .close-btn:hover { background: #ddd; }
         #rules-list {
-            margin: 0; padding: 0 0 0 20px; line-height: 2;
+            margin: 0; padding: 0 0 0 20px; line-height: 1.9;
             font-size: 15px; color: #333;
         }
-        #rules-list li { margin-bottom: 6px; }
-
-        /* כפתור חוקי עזר קבוע */
-        #rules-btn {
-            background: #2196F3; margin-top: 12px;
-        }
-        #rules-btn:hover { background: #1976D2; }
+        #rules-list li { margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -220,11 +231,11 @@
     <!-- מסך שוטר -->
     <div id="police-screen">
         <div class="police-box">
-            <div style="font-size:80px; margin-bottom:10px;">🚔</div>
-            <h2 style="color:#ff4444; margin:0 0 8px;">עצור!</h2>
-            <p style="color:#fff; font-size:20px; margin:0 0 24px;">עברת על חוקי התנועה!</p>
-            <button class="btn btn-secondary" style="width:200px; margin-bottom:10px;" onclick="showRulesFromPolice()">📖 חוקי עזר</button>
-            <button class="btn btn-primary" style="width:200px;" onclick="retryLevel()">🔄 נסה שוב</button>
+            <div style="font-size:64px; line-height:1;">🚨</div>
+            <h2>עצור!</h2>
+            <p>בחרת את המכונית הלא נכונה.<br>בדקי את חוקי הקדימה ונסי שוב.</p>
+            <button class="btn btn-rules" onclick="showRulesFromPolice()">📖 חוקי עזר</button>
+            <button class="btn btn-primary" onclick="retryLevel()">🔄 נסה שוב</button>
         </div>
     </div>
 
@@ -259,17 +270,16 @@
                 <div class="content">
                     <p id="ui-instructions">טוען...</p>
 
+                    <button class="btn btn-rules" onclick="showRulesModal()">📖 חוקי עזר</button>
+
                     <div id="status-msg" class="status-box"></div>
                     <!-- ב-Inspect: אחרי סיום שלב בדקי ב-#solution-img את ה־src לראות איזו תמונת פתרון מוצגת -->
                     <img id="solution-img" alt="Solution">
 
                     <div id="buttons-container">
-                        <button class="btn btn-secondary" id="retry-btn" onclick="initLevel()">נסה שוב</button>
-                        <button class="btn btn-primary"   id="next-btn"  onclick="nextLevel()">לשאלה הבאה</button>
-                        <button class="btn" id="rules-btn" onclick="showRulesModal()">📖 חוקי עזר</button>
+                        <button class="btn btn-secondary" id="retry-btn" onclick="initLevel()">🔄 נסה שוב</button>
+                        <button class="btn btn-primary"   id="next-btn"  onclick="nextLevel()">לשאלה הבאה ←</button>
                     </div>
-
-                    <button class="btn" id="rules-btn-always" onclick="showRulesModal()" style="background:#2196F3; margin-top:auto;">📖 חוקי עזר</button>
                 </div>
             </div>
         </div>
@@ -712,28 +722,40 @@
             this.input.on('pointermove', (pointer) => {
                 if (currentPhase !== 'drive' || !isDraggingB || !drivingCar || !pointer.isDown) return;
 
-                const diffX = pointer.x - dragStartX;
-                const diffY = pointer.y - dragStartY;
+                const dirs = Object.keys(activePaths[drivingCar.name] || {});
 
-                // 1. Lock onto a path from initial drag direction
-                if (!drivingPath && Math.sqrt(diffX * diffX + diffY * diffY) > 15) {
-                    const dirs = Object.keys(activePaths[drivingCar.name] || {});
+                // Always compute direction from pointer relative to car's current position
+                // so the player can steer mid-intersection by dragging left/right
+                const diffX = pointer.x - drivingCar.x;
+                const diffY = pointer.y - drivingCar.y;
+                const dist  = Math.sqrt(diffX * diffX + diffY * diffY);
+
+                if (dist > 20) {
                     const chosen = dirs.length === 1
                         ? dirs[0]
                         : pickDirByAngle(drivingCar, diffX, diffY, dirs);
-                    if (chosen) {
+                    if (chosen && chosen !== drivingDir) {
+                        // Switch to new path — find closest point to current car position
+                        const newPath = activePaths[drivingCar.name][chosen];
+                        const newT    = findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y);
+                        if (newT !== null && newT >= 0) {
+                            drivingPath = newPath;
+                            drivingDir  = chosen;
+                            drivingT    = newT;
+                        }
+                    } else if (!drivingPath && chosen) {
                         drivingPath = activePaths[drivingCar.name][chosen];
                         drivingDir  = chosen;
                     }
                 }
 
-                // 2. Move car to closest point on locked path
+                // Move car to closest point on current path
                 if (drivingPath) {
                     const t = findClosestPointOnPath(drivingPath, pointer.x, pointer.y);
-                    if (t !== null) {
+                    if (t !== null && t >= drivingT - 0.05) {  // allow tiny backward adjustment
                         const snap = drivingPath.getPoint(t);
-                        const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, snap.x, snap.y);
-                        if (dist < 100) {          // within ~100px of path = on road
+                        const snapDist = Phaser.Math.Distance.Between(pointer.x, pointer.y, snap.x, snap.y);
+                        if (snapDist < 120) {      // within ~120px of path = on road
                             drivingCar.x = snap.x;
                             drivingCar.y = snap.y;
                             const tang = drivingPath.getTangent(t);
@@ -1071,13 +1093,18 @@
 
         function completeDrive() {
             if (!drivingCar || !drivingPath) return;
-            const isWrong = drivingDir && drivingDir.endsWith('_wrong');
+
+            // Check whether this car reached its designated destination
+            const levelData  = LEVELS[currentLevelIndex];
+            const carColor   = drivingCar.name;
+            const sol        = levelData.solution.find(s => s.color === carColor);
+            const expectedDir = sol ? sol.direction : null;
+            const isWrong    = !drivingDir || !expectedDir || drivingDir !== expectedDir;
 
             if (isWrong) {
                 // Wrong destination — shake & snap back to start
                 const car     = drivingCar;
                 const path    = drivingPath;
-                const levelData = LEVELS[currentLevelIndex];
                 const carData = levelData.cars.find(c => c.id === car.name);
                 gameScene.tweens.add({
                     targets: car, x: car.x + 8,
@@ -1091,7 +1118,7 @@
                         // brief error hint in status
                         const box = document.getElementById('status-msg');
                         box.className = 'status-box error';
-                        box.innerText = 'נסה שוב — נכנסת לנתיב הלא נכון!';
+                        box.innerText = 'נסי שוב — זו לא הדרך הנכונה!';
                         box.style.display = 'block';
                         setTimeout(() => { box.style.display = 'none'; }, 2200);
                     }
@@ -1145,7 +1172,7 @@
             statusBox.className = 'status-box success';
             statusBox.innerText = levelData.solutionText || 'כל הכבוד! תשובה נכונה.';
             statusBox.style.display = 'block';
-            document.getElementById('buttons-container').style.display = 'block';
+            document.getElementById('buttons-container').style.display = 'flex';
             retryBtn.style.display = 'none';
             const isLast = (currentLevelIndex === LEVELS.length - 1);
             if (isLast) {
