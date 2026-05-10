@@ -179,7 +179,7 @@
         <div id="how-to-play-bar">
             <strong>איך משחקים?</strong>&nbsp;
             1. קליקי על רכב לבחירה (יופיעו חצים ירוקים עם הכיוונים הזמינים).&nbsp;&nbsp;
-            2. 👆 <b>החליקי</b> (Swipe) לכיוון הנסיעה, או לחצי על החץ הירוק, או השתמשי בחיצי המקלדת ⬅️⬆️➡️
+            2. 👆 <b>החליקי</b> (Swipe) לכיוון הנסיעה, לחצי על החץ הירוק, או <b>החזיקי</b> חץ מקלדת ⬅️⬆️➡️ לנהיגה ידנית&nbsp;(Tab = עבור לרכב הבא)
         </div>
         <div id="game-ui-row">
             <!-- ב-Inspect: בדקי על #game-container את data-bg-image ו-data-level-id כדי לראות איזו תמונת רקע מוצגת -->
@@ -595,6 +595,12 @@
         let dragPath = null;
         let dragDirection = null;
         let destinationMarkers = []; // עיגולי יעד פולסינגים
+
+        // נהיגה ידנית במקלדת
+        let manualDrivingPath = null;
+        let manualDrivingDir  = null;
+        let manualDrivingT    = 0;
+        const keysHeld = new Set(); // מפתחות שמוחזקים כרגע
         
         function preload() {
             // טעינת כל תמונות הרקע של השלבים (כל שלב יכול צומת אחרת)
@@ -868,8 +874,16 @@
             document.getElementById('solution-img').style.display = 'none';
             document.getElementById('buttons-container').style.display = 'none'; 
 
-            window.removeEventListener('keydown', handleKeyInput);
-            window.addEventListener('keydown', handleKeyInput);
+            // איפוס נהיגה ידנית
+            manualDrivingPath = null;
+            manualDrivingDir  = null;
+            manualDrivingT    = 0;
+            keysHeld.clear();
+
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup',   handleKeyUp);
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup',   handleKeyUp);
         }
 
         function createCar(scene, x, y, texture, name, angle) {
@@ -1098,34 +1112,108 @@
             }
         }
 
-        function handleKeyInput(event) {
-            if (!selectedCar || isInputLocked) return;
-            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(event.code) > -1) event.preventDefault();
-            
+        // ==========================================
+        //   נהיגה ידנית במקלדת
+        // ==========================================
+
+        function handleKeyDown(event) {
+            const key  = event.key;
+            const code = event.code;
+            keysHeld.add(key);
+
+            const isArrow = ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(code);
+            if (isArrow) event.preventDefault();
+
+            // Tab — בחר את המכונית הבאה שלא זזה עדיין
+            if (key === 'Tab') {
+                event.preventDefault();
+                if (!isInputLocked && !manualDrivingPath) selectNextCar();
+                return;
+            }
+
+            // אם כבר נוהגים — update() מטפל בתנועה
+            if (manualDrivingPath) return;
+
+            if (!isArrow || !selectedCar || isInputLocked) return;
             if (!activePaths[selectedCar.name]) return;
+
             const availableDirs = Object.keys(activePaths[selectedCar.name]);
             if (availableDirs.length === 0) return;
-            
+
             let dir = null;
             if (availableDirs.length === 1) {
-                dir = availableDirs[0];
+                dir = availableDirs[0]; // כל חץ מפעיל את הכיוון היחיד
             } else {
-                // חץ למעלה או למטה = ישר (קדימה), שמאל = פניה שמאלה, ימין = פניה ימינה
-                if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+                if (key === 'ArrowUp' || key === 'ArrowDown') {
                     if (availableDirs.includes('straight')) dir = 'straight';
-                    else if (availableDirs.includes('right')) dir = 'right';
-                    else if (availableDirs.includes('left')) dir = 'left';
-                }
-                if (event.key === "ArrowLeft") {
-                    if (availableDirs.includes('left')) dir = 'left';
+                } else if (key === 'ArrowLeft') {
+                    if (availableDirs.includes('left'))     dir = 'left';
                     else if (availableDirs.includes('straight')) dir = 'straight';
-                }
-                if (event.key === "ArrowRight") {
-                    if (availableDirs.includes('right')) dir = 'right';
+                } else if (key === 'ArrowRight') {
+                    if (availableDirs.includes('right'))    dir = 'right';
                     else if (availableDirs.includes('straight')) dir = 'straight';
                 }
             }
-            if (dir) moveCar(selectedCar, dir);
+
+            if (dir && activePaths[selectedCar.name][dir]) {
+                // התחל נהיגה ידנית על המסלול שנבחר
+                manualDrivingPath = activePaths[selectedCar.name][dir];
+                manualDrivingDir  = dir;
+                manualDrivingT    = 0;
+                hideDirectionArrows(selectedCar.name);
+                isInputLocked = true;
+            }
+        }
+
+        function handleKeyUp(event) {
+            keysHeld.delete(event.key);
+        }
+
+        // מחזור בין מכוניות שלא זזו עדיין (Tab)
+        function selectNextCar() {
+            const levelData = LEVELS[currentLevelIndex];
+            const unmoved = levelData.cars.map(c => carsMap[c.id]).filter(c => c && !c.hasMoved);
+            if (unmoved.length === 0) return;
+
+            if (selectedCar) {
+                selectedCar.setTint(0xffffff);
+                hideDirectionArrows(selectedCar.name);
+                const idx = unmoved.indexOf(selectedCar);
+                selectedCar = unmoved[(idx + 1) % unmoved.length];
+            } else {
+                selectedCar = unmoved[0];
+            }
+            selectedCar.setTint(0x55ff55);
+            showDirectionArrows(selectedCar);
+        }
+
+        // סיום נהיגה ידנית — מכונית הגיעה לסוף המסלול
+        function completeManualDriving() {
+            if (!selectedCar || !manualDrivingDir) return;
+            const car = selectedCar;
+            const dir = manualDrivingDir;
+
+            // הנח את המכונית בדיוק בנקודת הסוף
+            const endPt = manualDrivingPath.getPoint(1);
+            car.x = endPt.x;
+            car.y = endPt.y;
+
+            playerMoves.push({ color: car.name, direction: dir });
+            car.setTint(0x888888);
+            car.hasMoved = true;
+            car.disableInteractive();
+            hideDirectionArrows(car.name);
+
+            selectedCar       = null;
+            manualDrivingPath = null;
+            manualDrivingDir  = null;
+            manualDrivingT    = 0;
+            isInputLocked     = false;
+
+            const levelData = LEVELS[currentLevelIndex];
+            if (playerMoves.length === levelData.solution.length) {
+                checkWinCondition();
+            }
         }
 
         function moveCar(car, directionName) {
@@ -1233,7 +1321,28 @@
                 nextBtn.innerText = "דלג לשאלה הבאה";
             }
         }
-        function update() {}
+        function update() {
+            // נהיגה ידנית: מזיז את המכונית כל עוד חץ מקלדת מוחזק
+            if (!manualDrivingPath || !selectedCar) return;
+
+            const arrowHeld = keysHeld.has('ArrowUp')   || keysHeld.has('ArrowDown') ||
+                              keysHeld.has('ArrowLeft') || keysHeld.has('ArrowRight');
+            if (!arrowHeld) return;
+
+            // ~2 שניות לעבור את כל המסלול בלחיצה רציפה על 60fps
+            manualDrivingT = Math.min(1, manualDrivingT + 0.008);
+
+            const point = manualDrivingPath.getPoint(manualDrivingT);
+            selectedCar.x = point.x;
+            selectedCar.y = point.y;
+            const tangent = manualDrivingPath.getTangent(manualDrivingT);
+            selectedCar.rotation = tangent.angle() + Math.PI / 2;
+            selectedCar.pathFollower.t = manualDrivingT;
+
+            if (manualDrivingT >= 1) {
+                completeManualDriving();
+            }
+        }
     </script>
 </body>
 </html>
