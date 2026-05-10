@@ -665,6 +665,9 @@
         let drivingT    = 0;
         let isDraggingB = false;
 
+        // נהיגה במקלדת
+        const keysHeld = new Set();
+
         let carsMap      = {};
         let activePaths  = {};
         let gameScene    = null;
@@ -771,7 +774,79 @@
             return minD < (Math.PI * 2 / 3) ? best : null;
         }
 
-        function update() {} // Phaser game loop (not used in v2)
+        // ==========================================
+        //   נהיגה ידנית במקלדת — שלב ב׳
+        // ==========================================
+        function handleKeyDown(event) {
+            const key  = event.key;
+            const code = event.code;
+            keysHeld.add(key);
+
+            const isArrow = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(code);
+            if (isArrow) event.preventDefault();
+
+            // בחירת מסלול בלחיצה ראשונה (אם עוד לא נבחר)
+            if (isArrow && currentPhase === 'drive' && drivingCar && !drivingPath) {
+                if (!activePaths[drivingCar.name]) return;
+                const dirs = Object.keys(activePaths[drivingCar.name]);
+                if (dirs.length === 0) return;
+
+                // מיפוי חץ → זווית מסך
+                const arrowAngles = {
+                    'ArrowRight':  0,
+                    'ArrowDown':   Math.PI / 2,
+                    'ArrowLeft':   Math.PI,
+                    'ArrowUp':    -Math.PI / 2
+                };
+                const target = arrowAngles[key];
+                if (target === undefined) return;
+
+                // בחר את המסלול שכיוון ההתחלה שלו הכי קרוב לחץ
+                let chosen = null, minDiff = Infinity;
+                dirs.forEach(dir => {
+                    const path = activePaths[drivingCar.name][dir];
+                    if (!path) return;
+                    try {
+                        const tang = path.getTangent(0.1);
+                        const pathAngle = Math.atan2(tang.y, tang.x);
+                        let diff = Math.abs(pathAngle - target);
+                        if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                        if (diff < minDiff) { minDiff = diff; chosen = dir; }
+                    } catch(e) {}
+                });
+
+                if (chosen && minDiff < Math.PI / 2) {
+                    drivingPath = activePaths[drivingCar.name][chosen];
+                    drivingDir  = chosen;
+                }
+            }
+        }
+
+        function handleKeyUp(event) {
+            keysHeld.delete(event.key);
+        }
+
+        function update() {
+            // נהיגה ידנית עם מקלדת — שלב ב׳ בלבד
+            if (currentPhase !== 'drive' || !drivingCar || !drivingPath) return;
+
+            const arrowHeld = keysHeld.has('ArrowUp')    || keysHeld.has('ArrowDown') ||
+                              keysHeld.has('ArrowLeft')  || keysHeld.has('ArrowRight');
+            if (!arrowHeld) return;
+
+            // ~2 שניות לעבור את כל המסלול בלחיצה רציפה
+            drivingT = Math.min(1, drivingT + 0.008);
+            const pt = drivingPath.getPoint(drivingT);
+            drivingCar.x = pt.x;
+            drivingCar.y = pt.y;
+            const tang = drivingPath.getTangent(drivingT);
+            drivingCar.rotation = tang.angle() + Math.PI / 2;
+            drivingCar.pathFollower.t = drivingT;
+
+            if (drivingT >= 0.9) {
+                completeDrive();
+            }
+        }
 
         // ==========================================
         //   LEVEL INIT
@@ -782,6 +857,12 @@
             movedCars    = new Set();
             drivingCar   = null; drivingPath = null; drivingDir = null; drivingT = 0;
             isDraggingB  = false;
+            keysHeld.clear();
+
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup',   handleKeyUp);
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup',   handleKeyUp);
 
             // Cleanup previous scene objects
             Object.values(carsMap).forEach(c => c && c.destroy());
