@@ -30,7 +30,7 @@
         }
 
         #how-to-play-bar {
-            background: #fff8f0; border-right: 4px solid #e55353;
+            background: #fff8f0; border-right: 4px solid #F26D5C;
             padding: 10px 18px; margin-bottom: 10px; border-radius: 10px;
             font-size: 13px; line-height: 1.7; color: #444; width: 100%;
             box-sizing: border-box; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
@@ -91,7 +91,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #e55353 0%, #c0392b 100%);
+            background: linear-gradient(135deg, #F26D5C 0%, #d45845 100%);
             color: white; padding: 16px 20px; font-size: 22px; font-weight: bold;
             text-align: center; letter-spacing: 0.5px;
         }
@@ -107,8 +107,8 @@
         .btn:hover { transform: translateY(-1px); }
         .btn:active { transform: translateY(0); }
 
-        .btn-primary { background: #e55353; }
-        .btn-primary:hover { background: #c0392b; }
+        .btn-primary { background: #F26D5C; }
+        .btn-primary:hover { background: #d45845; }
 
         .btn-secondary { background: #7f8c8d; }
         .btn-secondary:hover { background: #636e72; }
@@ -120,7 +120,7 @@
 
         .status-box { padding: 12px 14px; border-radius: 10px; text-align: center; font-weight: bold; display: none; font-size: 14px; }
         .success { background-color: #eafaf1; color: #1e8449; border: 1px solid #a9dfbf; }
-        .error   { background-color: #fdf2f2; color: #c0392b; border: 1px solid #f5c6cb; }
+        .error   { background-color: #fdf2f2; color: #d45845; border: 1px solid #f5c6cb; }
 
         #solution-img { width: 100%; display: none; border-radius: 10px; border: 2px solid #eee; }
 
@@ -134,7 +134,7 @@
             z-index: 9997; text-align: center; gap: 18px;
         }
         #end-screen.show { display: flex; }
-        #end-screen h1 { color: #ff6b6b; font-size: 48px; margin: 0; text-shadow: 0 2px 12px rgba(255,107,107,0.5); }
+        #end-screen h1 { color: #F26D5C; font-size: 48px; margin: 0; text-shadow: 0 2px 12px rgba(242,109,92,0.5); }
         #end-screen p  { color: #fff; font-size: 22px; margin: 0; }
 
         .confetti-piece {
@@ -157,7 +157,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         #file-protocol-msg.show { display: flex; }
-        #file-protocol-msg h2 { color: #ff6b6b; margin-bottom: 20px; font-size: 28px; }
+        #file-protocol-msg h2 { color: #F26D5C; margin-bottom: 20px; font-size: 28px; }
         #file-protocol-msg p { max-width: 500px; line-height: 1.8; margin: 10px 0; font-size: 18px; }
         #file-protocol-msg code { background: #333; padding: 8px 14px; border-radius: 8px; display: inline-block; margin: 15px 0; font-size: 16px; }
 
@@ -173,10 +173,10 @@
             background: #fff; border-radius: 20px;
             padding: 36px 32px 28px; text-align: center; max-width: 320px; width: 90%;
             box-shadow: 0 12px 40px rgba(0,0,0,0.35);
-            border-top: 6px solid #e55353;
+            border-top: 6px solid #F26D5C;
             display: flex; flex-direction: column; gap: 12px;
         }
-        .police-box h2 { color: #c0392b; margin: 0; font-size: 26px; }
+        .police-box h2 { color: #F26D5C; margin: 0; font-size: 26px; }
         .police-box p  { color: #555; margin: 0; font-size: 16px; line-height: 1.4; }
 
         /* modal חוקי עזר */
@@ -807,40 +807,44 @@
             const isArrow = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(code);
             if (isArrow) event.preventDefault();
 
-            // בחירת מסלול בלחיצה ראשונה (אם עוד לא נבחר)
-            if (isArrow && currentPhase === 'drive' && drivingCar && !drivingPath) {
-                if (!activePaths[drivingCar.name]) return;
-                const dirs = Object.keys(activePaths[drivingCar.name]);
-                if (dirs.length === 0) return;
+            if (!isArrow || currentPhase !== 'drive' || !drivingCar) return;
+            if (!activePaths[drivingCar.name]) return;
+            const dirs = Object.keys(activePaths[drivingCar.name]);
+            if (dirs.length === 0) return;
 
-                // מיפוי חץ → זווית מסך
-                const arrowAngles = {
-                    'ArrowRight':  0,
-                    'ArrowDown':   Math.PI / 2,
-                    'ArrowLeft':   Math.PI,
-                    'ArrowUp':    -Math.PI / 2
-                };
-                const target = arrowAngles[key];
-                if (target === undefined) return;
+            // Map arrows to vehicle-relative direction using CURRENT car heading.
+            // ArrowRight = turn vehicle right, ArrowLeft = turn vehicle left, ArrowUp = straight.
+            // This works regardless of which way the car faces on screen.
+            const carFwd = drivingCar.rotation - Math.PI / 2; // current forward in math-angle coords
+            const arrowVecs = {
+                'ArrowUp':    [Math.cos(carFwd),                Math.sin(carFwd)],
+                'ArrowRight': [Math.cos(carFwd + Math.PI / 2),  Math.sin(carFwd + Math.PI / 2)],
+                'ArrowLeft':  [Math.cos(carFwd - Math.PI / 2),  Math.sin(carFwd - Math.PI / 2)],
+                'ArrowDown':  [Math.cos(carFwd + Math.PI),      Math.sin(carFwd + Math.PI)],
+            };
+            const vec = arrowVecs[key];
+            if (!vec) return;
 
-                // בחר את המסלול שכיוון ההתחלה שלו הכי קרוב לחץ
-                let chosen = null, minDiff = Infinity;
-                dirs.forEach(dir => {
-                    const path = activePaths[drivingCar.name][dir];
-                    if (!path) return;
-                    try {
-                        const tang = path.getTangent(0.1);
-                        const pathAngle = Math.atan2(tang.y, tang.x);
-                        let diff = Math.abs(pathAngle - target);
-                        if (diff > Math.PI) diff = 2 * Math.PI - diff;
-                        if (diff < minDiff) { minDiff = diff; chosen = dir; }
-                    } catch(e) {}
-                });
+            const chosen = dirs.length === 1
+                ? dirs[0]
+                : pickDirByAngle(drivingCar, vec[0], vec[1], dirs);
 
-                if (chosen && minDiff < Math.PI / 2) {
-                    drivingPath = activePaths[drivingCar.name][chosen];
-                    drivingDir  = chosen;
-                }
+            if (!chosen) return;
+
+            if (chosen !== drivingDir) {
+                // Switch to new path — find closest point to car's current position
+                const newPath = activePaths[drivingCar.name][chosen];
+                const newT = drivingT > 0
+                    ? (findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? 0)
+                    : 0;
+                drivingPath = newPath;
+                drivingDir  = chosen;
+                drivingT    = newT;
+            } else if (!drivingPath) {
+                // First selection
+                drivingPath = activePaths[drivingCar.name][chosen];
+                drivingDir  = chosen;
+                drivingT    = 0;
             }
         }
 
@@ -1055,7 +1059,7 @@
                 startPhaseDrive(car);
             } else {
                 // Brief red flash then police screen
-                car.setTint(0xff4444);
+                car.setTint(0xF26D5C);
                 gameScene.time.delayedCall(400, () => {
                     if (carsMap[car.name]) car.setTint(0xffffff);
                     showPoliceScreen();
