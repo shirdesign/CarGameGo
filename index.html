@@ -626,128 +626,155 @@
 
         function create() {
             gameScene = this;
-            
+
+            // ─── pointerdown: תיעוד נקודת התחלה ─────────────────────────────
             this.input.on('pointerdown', (pointer) => {
-                dragStartX = pointer.x; 
-                dragStartY = pointer.y;
-                
-                // בדיקה אם לחיצה על מסלול
-                if (selectedCar && !isInputLocked) {
-                    const clickedPath = checkPathClick(pointer.x, pointer.y, selectedCar);
-                    if (clickedPath) {
-                        isDraggingCar = true;
-                        dragPath = clickedPath.path;
-                        dragDirection = clickedPath.direction;
-                    }
-                }
+                dragStartX    = pointer.x;
+                dragStartY    = pointer.y;
+                isDraggingCar = false;
+                dragPath      = null;
+                dragDirection = null;
             });
-            
+
+            // ─── pointermove: גרירה לאורך המסלול ─────────────────────────────
             this.input.on('pointermove', (pointer) => {
-                // גרירה עם העכבר - אם המכונית נבחרת וגוררים
-                if (selectedCar && selectedCar.isDragging && !isInputLocked) {
-                    const diffX = pointer.x - selectedCar.dragStartX;
-                    const diffY = pointer.y - selectedCar.dragStartY;
-                    const distance = Math.sqrt(diffX * diffX + diffY * diffY);
-                    
-                    // אם הגרירה מספיק ארוכה (יותר מ-10 פיקסלים), נסה לזוז בכיוון
-                    if (distance > 10) {
-                        // זה יעבוד עם handleSwipe שמזהה את הכיוון
-                        // אבל כרגע פשוט נציג אינדיקציה ויזואלית
-                        selectedCar.setTint(0x88ff88); // צבע שונה כשגוררים
+                if (!pointer.isDown || !selectedCar || isInputLocked) return;
+
+                const diffX = pointer.x - dragStartX;
+                const diffY = pointer.y - dragStartY;
+
+                // ברגע שהסמן זז מספיק — בחר מסלול לפי כיוון הגרירה
+                if (!isDraggingCar && Math.sqrt(diffX * diffX + diffY * diffY) > 15) {
+                    if (!activePaths[selectedCar.name]) return;
+                    const availableDirs = Object.keys(activePaths[selectedCar.name]);
+                    if (availableDirs.length === 0) return;
+
+                    let chosenDir = null;
+                    if (availableDirs.length === 1) {
+                        chosenDir = availableDirs[0];
+                    } else {
+                        // אותה לוגיקת זווית כמו handleSwipe
+                        const swipeAngle    = Math.atan2(diffY, diffX);
+                        const carForwardRad = getCarForwardMathAngleRad(selectedCar);
+                        let rel = ((swipeAngle - carForwardRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+                        const dirAngles = { straight: 0, left: -Math.PI/2, left_wrong: -Math.PI/2, right: Math.PI/2 };
+                        let best = null, minDiff = Infinity;
+                        availableDirs.forEach(dir => {
+                            if (dir === 'left_wrong') return;
+                            const da = dirAngles[dir] !== undefined ? dirAngles[dir] : 0;
+                            let diff = Math.abs(rel - da);
+                            if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                            if (diff < minDiff) { minDiff = diff; best = dir; }
+                        });
+                        if (minDiff < Math.PI / 2) chosenDir = best;
+                    }
+
+                    if (chosenDir && activePaths[selectedCar.name][chosenDir]) {
+                        isDraggingCar = true;
+                        dragPath      = activePaths[selectedCar.name][chosenDir];
+                        dragDirection = chosenDir;
+                        hideDirectionArrows(selectedCar.name);
+                        selectedCar.setTint(0x88ffaa); // ירוק בהיר = גורר
                     }
                 }
-                
-                // גרירה על מסלול (הקוד הישן)
-                if (isDraggingCar && selectedCar && dragPath) {
-                    const closestT = findClosestPointOnPath(dragPath, pointer.x, pointer.y);
-                    if (closestT !== null) {
-                        const point = dragPath.getPoint(closestT);
-                        selectedCar.x = point.x;
-                        selectedCar.y = point.y;
-                        const tangent = dragPath.getTangent(closestT);
-                        selectedCar.rotation = tangent.angle() + Math.PI / 2;
-                        selectedCar.pathFollower.t = closestT;
+
+                // הנע את המכונית לנקודה הקרובה ביותר על המסלול לסמן
+                if (isDraggingCar && dragPath) {
+                    const t = findClosestPointOnPath(dragPath, pointer.x, pointer.y);
+                    if (t !== null) {
+                        const pt = dragPath.getPoint(t);
+                        selectedCar.x = pt.x;
+                        selectedCar.y = pt.y;
+                        const tang = dragPath.getTangent(t);
+                        selectedCar.rotation = tang.angle() + Math.PI / 2;
+                        selectedCar.pathFollower.t = t;
                     }
                 }
             });
-            
+
+            // ─── pointerup: סיום גרירה ───────────────────────────────────────
             this.input.on('pointerup', (pointer) => {
-                // גרירה פשוטה עם העכבר
-                if (selectedCar && selectedCar.isDragging && !isInputLocked) {
-                    selectedCar.isDragging = false;
-                    const diffX = pointer.x - selectedCar.dragStartX;
-                    const diffY = pointer.y - selectedCar.dragStartY;
-                    const distance = Math.sqrt(diffX * diffX + diffY * diffY);
-                    
-                    // אם הגרירה מספיק ארוכה, נסה לזוז בכיוון
-                    if (distance > 30) {
-                        selectedCar.setTint(0x55ff55); // חזור לצבע רגיל
-                        handleSwipe(diffX, diffY);
+                if (isDraggingCar && selectedCar && dragPath && dragDirection) {
+                    isDraggingCar = false;
+                    selectedCar.setTint(0x55ff55);
+                    const t = selectedCar.pathFollower ? selectedCar.pathFollower.t : 0;
+
+                    if (t >= 0.7) {
+                        // הגיע מספיק רחוק — השלם את המהלך בצורה חלקה
+                        completeDragMove(selectedCar, dragDirection, dragPath, t);
                     } else {
-                        selectedCar.setTint(0x55ff55); // חזור לצבע רגיל
+                        // חזור להתחלה
+                        const startPt  = dragPath.getPoint(0);
+                        selectedCar.x  = startPt.x;
+                        selectedCar.y  = startPt.y;
+                        const carData  = LEVELS[currentLevelIndex].cars.find(c => c.id === selectedCar.name);
+                        if (carData) selectedCar.rotation = Phaser.Math.DegToRad(carData.angle);
+                        selectedCar.pathFollower.t = 0;
+                        dragPath = null; dragDirection = null;
+                        showDirectionArrows(selectedCar);
                     }
                     return;
                 }
-                
-                // גרירה על מסלול (הקוד הישן)
-                if (isDraggingCar && selectedCar && dragPath && dragDirection) {
-                    isDraggingCar = false;
-                    const finalT = selectedCar.pathFollower.t;
-                    
-                    if (finalT >= 0.95) {
-                        selectedCar.pathFollower.t = 1;
-                        const endPoint = dragPath.getPoint(1);
-                        selectedCar.x = endPoint.x;
-                        selectedCar.y = endPoint.y;
-                        
-                        playerMoves.push({ color: selectedCar.name, direction: dragDirection });
-                        selectedCar.setTint(0x888888);
-                        selectedCar.hasMoved = true;
-                        selectedCar.disableInteractive();
-                        hideDirectionArrows(selectedCar.name);
-                        selectedCar = null;
-                        
-                        const levelData = LEVELS[currentLevelIndex];
-                        if (playerMoves.length === levelData.solution.length) {
-                            checkWinCondition();
-                        }
-                    } else {
-                        selectedCar.pathFollower.t = 0;
-                        const startPoint = dragPath.getPoint(0);
-                        selectedCar.x = startPoint.x;
-                        selectedCar.y = startPoint.y;
-                        selectedCar.rotation = Phaser.Math.DegToRad(LEVELS[currentLevelIndex].cars.find(c => c.id === selectedCar.name).angle);
-                    }
-                    dragPath = null;
-                    dragDirection = null;
-                } else if (!isDraggingCar && selectedCar && !isInputLocked && !selectedCar.isDragging) {
-                    // Swipe רגיל (אם לא הייתה גרירה)
+
+                // אם לא הייתה גרירה על מסלול — בדוק swipe מהיר
+                if (!isDraggingCar && selectedCar && !isInputLocked) {
                     const diffX = pointer.x - dragStartX;
                     const diffY = pointer.y - dragStartY;
-                    if (Math.abs(diffX) < 30 && Math.abs(diffY) < 30) return;
-                    handleSwipe(diffX, diffY);
+                    if (Math.abs(diffX) >= 30 || Math.abs(diffY) >= 30) {
+                        handleSwipe(diffX, diffY);
+                    }
                 }
             });
 
             initLevel();
         }
-        
-        function checkPathClick(x, y, car) {
-            if (!activePaths[car.name]) return null;
-            
-            // בדוק כל מסלול - אם הנקודה קרובה למסלול (בטווח 50 פיקסלים)
-            for (let dir in activePaths[car.name]) {
-                const path = activePaths[car.name][dir];
-                const t = findClosestPointOnPath(path, x, y);
-                if (t !== null) {
-                    const point = path.getPoint(t);
-                    const distance = Phaser.Math.Distance.Between(x, y, point.x, point.y);
-                    if (distance < 50) {
-                        return { path: path, direction: dir };
-                    }
-                }
+
+        // ─── השלמת גרירה: אנימציה קצרה לסוף המסלול ──────────────────────────
+        function completeDragMove(car, dir, path, currentT) {
+            isInputLocked = true;
+            const remaining = (1 - currentT) * 1200; // מקסימום ~1.2 שניות לשארית
+
+            if (currentT >= 0.98) {
+                // כמעט בסוף — snap ישיר
+                const ep = path.getPoint(1);
+                car.x = ep.x; car.y = ep.y;
+                _finishDragMove(car, dir);
+                isInputLocked = false;
+                return;
             }
-            return null;
+
+            gameScene.tweens.add({
+                targets: car.pathFollower,
+                t: 1,
+                duration: remaining,
+                ease: 'Sine.easeOut',
+                onUpdate: () => {
+                    const pt   = path.getPoint(car.pathFollower.t);
+                    car.x      = pt.x;
+                    car.y      = pt.y;
+                    const tang = path.getTangent(car.pathFollower.t);
+                    car.rotation = tang.angle() + Math.PI / 2;
+                },
+                onComplete: () => {
+                    _finishDragMove(car, dir);
+                    isInputLocked = false;
+                }
+            });
+        }
+
+        function _finishDragMove(car, dir) {
+            playerMoves.push({ color: car.name, direction: dir });
+            car.setTint(0x888888);
+            car.hasMoved = true;
+            car.disableInteractive();
+            hideDirectionArrows(car.name);
+            if (selectedCar === car) selectedCar = null;
+            dragPath = null; dragDirection = null;
+
+            const levelData = LEVELS[currentLevelIndex];
+            if (playerMoves.length === levelData.solution.length) {
+                checkWinCondition();
+            }
         }
         
         function findClosestPointOnPath(path, x, y) {
@@ -894,26 +921,18 @@
             car.angle = angle; 
             car.setInteractive({ cursor: 'grab', useHandCursor: true });
             car.pathFollower = { t: 0 };
-            car.isDragging = false;
-            car.dragStartX = 0;
-            car.dragStartY = 0;
             car.hasMoved = false;
 
             car.on('pointerdown', (pointer) => {
                 if (isInputLocked) return;
                 if (car.hasMoved) return;
-                if (selectedCar) {
+                if (selectedCar && selectedCar !== car) {
                     selectedCar.setTint(0xffffff);
                     hideDirectionArrows(selectedCar.name);
                 }
                 selectedCar = car;
                 car.setTint(0x55ff55);
                 showDirectionArrows(car);
-                
-                // התחל גרירה
-                car.isDragging = true;
-                car.dragStartX = pointer.x;
-                car.dragStartY = pointer.y;
             });
             
             return car;
