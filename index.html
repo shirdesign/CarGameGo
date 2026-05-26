@@ -54,6 +54,90 @@
 
         #game-container:active { cursor: grabbing; }
 
+        /* how-to bar no longer shown — instructions live in the right panel */
+        #how-to-play-bar { display: none; }
+
+        /* --- Intro overlay --- */
+        #intro-overlay {
+            display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 10000; padding: 20px;
+        }
+        .intro-box {
+            background: white; border-radius: 24px; padding: 36px 40px;
+            max-width: 500px; width: 95%; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; gap: 16px; align-items: center;
+        }
+        .intro-box h1 { color: #F26D5C; margin: 0; font-size: 28px; }
+        .intro-logo { font-size: 64px; line-height: 1; }
+        #intro-text { text-align: right; width: 100%; color: #444; font-size: 15px; line-height: 1.7; }
+        #intro-text .placeholder { color: #999; font-style: italic; font-size: 13px; border: 1px dashed #ddd; padding: 10px; border-radius: 8px; margin-top: 6px; }
+
+        /* --- Pre-question bubble --- */
+        #question-bubble {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.62); backdrop-filter: blur(4px);
+            justify-content: center; align-items: center; z-index: 9995;
+        }
+        #question-bubble.show { display: flex; }
+        .bubble-box {
+            background: white; border-radius: 20px; padding: 28px 32px;
+            max-width: 400px; width: 90%; text-align: center;
+            box-shadow: 0 16px 50px rgba(0,0,0,0.4);
+            border-top: 5px solid #F26D5C;
+            display: flex; flex-direction: column; gap: 12px; align-items: center;
+            animation: bubble-in 0.3s ease;
+        }
+        @keyframes bubble-in {
+            from { transform: scale(0.85); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+        .bubble-level-badge {
+            background: #F26D5C; color: white; font-size: 12px; font-weight: bold;
+            padding: 3px 14px; border-radius: 12px; letter-spacing: 0.5px;
+        }
+        .bubble-text { font-size: 19px; font-weight: bold; color: #333; line-height: 1.4; }
+        .bubble-hint { font-size: 14px; color: #888; }
+
+        /* --- Success toast --- */
+        .success-toast {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.7);
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white; font-size: 28px; font-weight: bold;
+            padding: 18px 38px; border-radius: 20px; z-index: 9998;
+            pointer-events: none; opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            box-shadow: 0 8px 30px rgba(39,174,96,0.45);
+            text-align: center;
+        }
+
+        /* --- How-to panel inside right panel --- */
+        .how-to-panel {
+            background: #fff8f0; border-radius: 10px; padding: 12px 14px;
+            font-size: 13px; line-height: 1.9; color: #555;
+            border: 1px solid #fde8e3;
+        }
+        .how-to-panel strong { color: #F26D5C; display: block; margin-bottom: 2px; font-size: 14px; }
+
+        /* --- Swipe animation --- */
+        .swipe-demo {
+            display: flex; align-items: center; gap: 4px;
+            margin-top: 4px; direction: ltr; justify-content: center;
+        }
+        .swipe-hand {
+            display: inline-block; font-size: 20px;
+            animation: swipe-gesture 2s ease-in-out infinite;
+        }
+        @keyframes swipe-gesture {
+            0%, 100% { transform: translateX(0); opacity: 0.5; }
+            15%  { opacity: 1; transform: translateX(0); }
+            65%  { transform: translateX(36px); opacity: 1; }
+            85%  { transform: translateX(36px); opacity: 0; }
+        }
+
         #ui-layer {
             width: 320px; min-height: 200px; background: white;
             box-shadow: -5px 0 15px rgba(0,0,0,0.1); border-radius: 12px;
@@ -220,6 +304,32 @@
         <p>ואז פתחי את הקישור למעלה בדפדפן.</p>
     </div>
 
+    <!-- מסך פתיחה -->
+    <div id="intro-overlay">
+        <div class="intro-box">
+            <div class="intro-logo">🚗</div>
+            <h1>Traffic Logic Game</h1>
+            <div id="intro-text">
+                <p><strong>ברוכים הבאים למשחק קדימות הדרך!</strong></p>
+                <div class="placeholder">
+                    📝 <strong>הערה למפתח:</strong> טקסט מסך הפתיחה הסופי יסופק על-ידי הלקוחה.<br>
+                    כאן יופיעו: הסבר על המשחק ומטרתו, הדגמת רכב שמגיע ליעד, והכוונה לחוקי העזר.
+                </div>
+            </div>
+            <div class="how-to-panel" style="width:100%; margin:0;">
+                <strong>✏️ איך משחקים?</strong>
+                <div>שלב א׳ — בחרו את הרכב שיש לו זכות קדימה</div>
+                <div>שלב ב׳ — גררו אותו לנקודת היעד שלו</div>
+                <div>⌨️ מקלדת: חצים לפי כיוון המפה</div>
+                <div class="swipe-demo">
+                    <span class="swipe-hand">👆</span>
+                    <span style="font-size:13px; color:#999; margin-right:8px;">← גרירה</span>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="width:200px; font-size:18px; margin-top:4px;" onclick="closeIntro()">▶ התחל לשחק</button>
+        </div>
+    </div>
+
     <!-- מסך סיום -->
     <div id="end-screen">
         <h1>🎉 כל הכבוד!</h1>
@@ -233,9 +343,19 @@
         <div class="police-box">
             <div style="font-size:64px; line-height:1;">🚨</div>
             <h2>עצור!</h2>
-            <p>בחרת את המכונית הלא נכונה.<br>בדקי את חוקי הקדימה ונסי שוב.</p>
+            <p id="police-error-text">בחרת את הרכב הלא נכון. בדקו את חוקי הקדימה ונסו שוב.</p>
             <button class="btn btn-rules" onclick="showRulesFromPolice()">📖 חוקי עזר</button>
-            <button class="btn btn-primary" onclick="retryLevel()">🔄 נסה שוב</button>
+            <button class="btn btn-primary" onclick="retryCurrentCar()" style="pointer-events:auto;">🔄 נסה שוב</button>
+        </div>
+    </div>
+
+    <!-- בועת שאלה -->
+    <div id="question-bubble" onclick="closeQuestionBubble()">
+        <div class="bubble-box" onclick="event.stopPropagation()">
+            <div class="bubble-level-badge" id="bubble-level-badge">שאלה 1</div>
+            <div class="bubble-text" id="bubble-text"></div>
+            <div class="bubble-hint">לפרטים נוספים — קראו את הפאנל הימני 👈</div>
+            <button class="btn btn-primary" style="width:180px; margin-top:4px;" onclick="closeQuestionBubble()">▶ בואו נתחיל!</button>
         </div>
     </div>
 
@@ -268,6 +388,16 @@
                     <a href="admin.html" style="float: left; color: white; text-decoration: none; font-size: 14px; margin-top: 5px;">⚙️ אדמין</a>
                 </div>
                 <div class="content">
+                    <div class="how-to-panel">
+                        <strong>✏️ איך משחקים?</strong>
+                        <div>שלב א׳ — בחרו את הרכב שיש לו זכות קדימה</div>
+                        <div>שלב ב׳ — גררו אותו לנקודת היעד שלו</div>
+                        <div>⌨️ מקלדת: חצים לפי כיוון המפה</div>
+                        <div class="swipe-demo">
+                            <span class="swipe-hand">👆</span>
+                            <span style="font-size:12px; color:#bbb; margin-right:6px;">← גרירה</span>
+                        </div>
+                    </div>
                     <p id="ui-instructions">טוען...</p>
 
                     <button class="btn btn-rules" onclick="showRulesModal()">📖 חוקי עזר</button>
@@ -347,7 +477,9 @@
                     { color: 'red', direction: 'straight' },
                     { color: 'blue', direction: 'straight' },
                     { color: 'yellow', direction: 'left' }
-                ]
+                ],
+                bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
+                rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 2,
@@ -385,7 +517,9 @@
                     { color: 'red', direction: 'straight' },
                     { color: 'blue', direction: 'straight' },
                     { color: 'yellow', direction: 'left' }
-                ]
+                ],
+                bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
+                rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 3,
@@ -423,7 +557,9 @@
                     { color: 'blue', direction: 'straight' },
                     { color: 'red', direction: 'straight' },
                     { color: 'yellow', direction: 'straight' }
-                ]
+                ],
+                bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
+                rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 4,
@@ -461,7 +597,9 @@
                     { color: 'blue', direction: 'straight' },
                     { color: 'yellow', direction: 'left' },
                     { color: 'red', direction: 'straight' }
-                ]
+                ],
+                bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
+                rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 5,
@@ -499,7 +637,9 @@
                     { color: 'yellow', direction: 'straight' },
                     { color: 'red', direction: 'straight' },
                     { color: 'blue', direction: 'straight' }
-                ]
+                ],
+                bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
+                rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 6,
@@ -526,7 +666,9 @@
                 solution: [
                     { color: 'red', direction: 'left' },
                     { color: 'yellow', direction: 'left' }
-                ]
+                ],
+                bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
+                rules: ['פונה שמאלה מחד-סטרי: מנתיב שמאלי אל נתיב שמאלי','פונה שמאלה מדו-סטרי: מנתיב ימני אל נתיב ימני']
             },
             {
                 id: 7,
@@ -553,7 +695,9 @@
                 solution: [
                     { color: 'yellow', direction: 'left' },
                     { color: 'red', direction: 'left' }
-                ]
+                ],
+                bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
+                rules: ['פונה שמאלה מחד-סטרי: מנתיב שמאלי אל נתיב שמאלי','פונה שמאלה מדו-סטרי: מנתיב ימני אל נתיב ימני']
             },
             {
                 id: 8,
@@ -580,7 +724,9 @@
                 solution: [
                     { color: 'yellow', direction: 'left' },
                     { color: 'red', direction: 'left' }
-                ]
+                ],
+                bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
+                rules: ['בכביש עם שטח הפרדה: פנה מנתיב ימני אל נתיב שמאלי','שטח ההפרדה מהווה מחסום בין כיווני הנסיעה']
             }
         ];
 
@@ -789,6 +935,23 @@
             initLevel();
         }
 
+        // Pick path whose initial tangent best matches a world-direction angle
+        // Used by keyboard navigation (arrows = screen-absolute direction)
+        function pickDirByWorldAngle(carId, arrowAngle, dirs) {
+            let best = null, minD = Infinity;
+            dirs.forEach(dir => {
+                const path = activePaths[carId] && activePaths[carId][dir];
+                if (!path) return;
+                const tang = path.getTangent(0.02);
+                if (!tang) return;
+                const pathAngle = Math.atan2(tang.y, tang.x);
+                let d = Math.abs(arrowAngle - pathAngle);
+                if (d > Math.PI) d = 2 * Math.PI - d;
+                if (d < minD) { minD = d; best = dir; }
+            });
+            return minD < (Math.PI * 2 / 3) ? best : null;
+        }
+
         // Pick path direction matching drag angle (same logic as existing swipe)
         function pickDirByAngle(car, diffX, diffY, dirs) {
             const swipeAngle = Math.atan2(diffY, diffX);
@@ -821,36 +984,26 @@
             const dirs = Object.keys(activePaths[drivingCar.name]);
             if (dirs.length === 0) return;
 
-            // Map arrows to vehicle-relative directions.
-            // ArrowRight = vehicle right, ArrowLeft = vehicle left, ArrowUp = straight forward.
-            // IMPORTANT: use getCarForwardMathAngleRad — the same reference frame that
-            // pickDirByAngle and the DA table ("left"/-π/2, "right"/+π/2, "straight"/0) use.
-            // Using drivingCar.rotation directly would misalign the two frames.
-            const carFwd = getCarForwardMathAngleRad(drivingCar);
-            const arrowVecs = {
-                'ArrowUp':    [Math.cos(carFwd),                Math.sin(carFwd)],
-                'ArrowRight': [Math.cos(carFwd + Math.PI / 2),  Math.sin(carFwd + Math.PI / 2)],
-                'ArrowLeft':  [Math.cos(carFwd - Math.PI / 2),  Math.sin(carFwd - Math.PI / 2)],
-                'ArrowDown':  [Math.cos(carFwd + Math.PI),      Math.sin(carFwd + Math.PI)],
+            // Map arrows to world/screen-absolute directions
+            // (חץ למעלה = תנועה למעלה תמיד, ללא קשר לכיוון הרכב)
+            const worldAngles = {
+                'ArrowUp':    -Math.PI / 2,
+                'ArrowDown':   Math.PI / 2,
+                'ArrowLeft':   Math.PI,
+                'ArrowRight':  0,
             };
-            const vec = arrowVecs[key];
-            if (!vec) return;
+            const arrowAngle = worldAngles[key];
+            if (arrowAngle === undefined) return;
 
-            // For levels with left_wrong paths, pickDirByAngle can't distinguish
-            // them (both "left" and "left_wrong" share the same DA angle). In those
-            // levels, drag is the primary selection mechanism (endpoint-distance).
-            // Keyboard just advances along whatever path is already selected (or
-            // defaults to the first option if none selected yet).
             const hasLaneChoice = dirs.some(d => d.includes('_wrong'));
             let chosen;
             if (dirs.length === 1) {
                 chosen = dirs[0];
             } else if (hasLaneChoice) {
-                // Keep currently-selected lane, or pick first option by default.
-                // Player must use drag to switch between left and left_wrong lanes.
+                // Lane choice requires drag (endpoint-distance); keyboard keeps current
                 chosen = drivingDir || dirs[0];
             } else {
-                chosen = pickDirByAngle(drivingCar, vec[0], vec[1], dirs);
+                chosen = pickDirByWorldAngle(drivingCar.name, arrowAngle, dirs);
             }
 
             if (!chosen) return;
@@ -992,6 +1145,7 @@
             document.getElementById('buttons-container').style.display = 'none';
 
             startPhaseSelect();
+            showQuestionBubble(levelData);
         }
 
         function createCar(scene, x, y, texture, name, angle) {
@@ -1134,6 +1288,7 @@
                 const car     = drivingCar;
                 const path    = drivingPath;
                 const carData = levelData.cars.find(c => c.id === car.name);
+                car.disableInteractive();  // prevent double-clicks during shake
                 gameScene.tweens.add({
                     targets: car, x: car.x + 8,
                     duration: 60, yoyo: true, repeat: 3,
@@ -1143,10 +1298,12 @@
                         if (carData) car.rotation = Phaser.Math.DegToRad(carData.angle);
                         car.pathFollower.t = 0;
                         drivingPath = null; drivingDir = null; drivingT = 0;
+                        car.setTint(0x55ff55);
+                        car.setInteractive({ cursor: 'grab', useHandCursor: true });
                         // brief error hint in status
                         const box = document.getElementById('status-msg');
                         box.className = 'status-box error';
-                        box.innerText = 'נסי שוב — זו לא הדרך הנכונה!';
+                        box.innerText = 'נסו שוב — זו לא הדרך הנכונה!';
                         box.style.display = 'block';
                         setTimeout(() => { box.style.display = 'none'; }, 2200);
                     }
@@ -1174,11 +1331,12 @@
                     car.disableInteractive();
                     movedCars.add(car.name);
                     drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0;
+                    showSuccessToast('מצוין! 🎯');
                     const levelData = LEVELS[currentLevelIndex];
                     if (movedCars.size >= levelData.solution.length) {
-                        setTimeout(showLevelSuccess, 600);
+                        setTimeout(showLevelSuccess, 900);
                     } else {
-                        startPhaseSelect();
+                        setTimeout(startPhaseSelect, 700);
                     }
                 }
             });
@@ -1255,14 +1413,74 @@
         }
 
         // ==========================================
+        //   SUCCESS TOAST
+        // ==========================================
+        function showSuccessToast(text) {
+            const toast = document.createElement('div');
+            toast.className = 'success-toast';
+            toast.textContent = text;
+            document.body.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translate(-50%, -50%) scale(1)';
+            });
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                setTimeout(() => toast.remove(), 400);
+            }, 900);
+        }
+
+        // ==========================================
+        //   INTRO SCREEN
+        // ==========================================
+        function closeIntro() {
+            document.getElementById('intro-overlay').style.display = 'none';
+        }
+
+        // ==========================================
+        //   PRE-QUESTION BUBBLE
+        // ==========================================
+        function showQuestionBubble(levelData) {
+            // Extract short question from instruction (text before first '?' or '??')
+            const instr = levelData.instruction || '';
+            const short = levelData.bubbleText
+                || (instr.split('??')[0] || instr.split('?')[0] || instr).trim();
+            document.getElementById('bubble-level-badge').textContent = `שאלה ${levelData.id}`;
+            document.getElementById('bubble-text').textContent = short;
+            document.getElementById('question-bubble').classList.add('show');
+        }
+        function closeQuestionBubble() {
+            document.getElementById('question-bubble').classList.remove('show');
+        }
+
+        // ==========================================
         //   POLICE SCREEN
         // ==========================================
         function showPoliceScreen() {
+            const levelData = LEVELS[currentLevelIndex];
+            const errText = levelData.errorText || 'בחרת את הרכב הלא נכון. בדקו את חוקי הקדימה ונסו שוב.';
+            document.getElementById('police-error-text').innerHTML = errText;
             document.getElementById('police-screen').classList.add('show');
         }
-        function retryLevel() {
+        function retryCurrentCar() {
             document.getElementById('police-screen').classList.remove('show');
-            initLevel();
+            // Preserve progress of already-moved cars — only reset the remaining ones
+            currentPhase = 'select';
+            drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0;
+            isDraggingB = false;
+            const levelData = LEVELS[currentLevelIndex];
+            levelData.cars.forEach(cd => {
+                const car = carsMap[cd.id];
+                if (car && !car.hasMoved) {
+                    car.x = cd.x; car.y = cd.y;
+                    car.rotation = Phaser.Math.DegToRad(cd.angle);
+                    car.setTint(0xffffff);
+                    car.setInteractive({ cursor: 'pointer', useHandCursor: true });
+                }
+            });
+            // Small delay prevents click-through to Phaser canvas behind the police screen
+            setTimeout(startPhaseSelect, 150);
         }
         function showRulesFromPolice() {
             document.getElementById('police-screen').classList.remove('show');
