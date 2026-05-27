@@ -950,16 +950,19 @@
             initLevel();
         }
 
-        // Pick path whose initial tangent best matches a world-direction angle
-        // Used by keyboard navigation (arrows = screen-absolute direction)
+        // Pick path whose overall direction (start→end) best matches a world-direction angle.
+        // Using start→end instead of initial tangent avoids the problem where all paths
+        // for a given car start in the same direction (e.g. all go UP at t=0.02)
+        // and the tangent differences are too small to distinguish left/right reliably.
         function pickDirByWorldAngle(carId, arrowAngle, dirs) {
             let best = null, minD = Infinity;
             dirs.forEach(dir => {
                 const path = activePaths[carId] && activePaths[carId][dir];
                 if (!path) return;
-                const tang = path.getTangent(0.02);
-                if (!tang) return;
-                const pathAngle = Math.atan2(tang.y, tang.x);
+                const startPt = path.getPoint(0);
+                const endPt   = path.getPoint(1);
+                if (!startPt || !endPt) return;
+                const pathAngle = Math.atan2(endPt.y - startPt.y, endPt.x - startPt.x);
                 let d = Math.abs(arrowAngle - pathAngle);
                 if (d > Math.PI) d = 2 * Math.PI - d;
                 if (d < minD) { minD = d; best = dir; }
