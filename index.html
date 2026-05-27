@@ -879,14 +879,29 @@
                 // distinguished by path-proximity alone).
                 let chosenDir = dirs[0];
                 if (dirs.length > 1) {
-                    let minDist = Infinity;
-                    dirs.forEach(dir => {
-                        const p = activePaths[drivingCar.name][dir];
-                        if (!p) return;
-                        const endPt = p.getPoint(1);
-                        const d = Phaser.Math.Distance.Between(pointer.x, pointer.y, endPt.x, endPt.y);
-                        if (d < minDist) { minDist = d; chosenDir = dir; }
-                    });
+                    // Once the car is 40%+ along a path, commit — don't switch
+                    if (drivingT > 0.4 && drivingDir) {
+                        chosenDir = drivingDir;
+                    } else {
+                        let minDist = Infinity;
+                        dirs.forEach(dir => {
+                            const p = activePaths[drivingCar.name][dir];
+                            if (!p) return;
+                            const endPt = p.getPoint(1);
+                            const d = Phaser.Math.Distance.Between(pointer.x, pointer.y, endPt.x, endPt.y);
+                            if (d < minDist) { minDist = d; chosenDir = dir; }
+                        });
+                        // Hysteresis: require new endpoint to be clearly closer (25px)
+                        // before switching — prevents rapid flickering in ambiguous zones
+                        if (drivingDir && chosenDir !== drivingDir) {
+                            const curPath = activePaths[drivingCar.name][drivingDir];
+                            if (curPath) {
+                                const curEndPt = curPath.getPoint(1);
+                                const curDist  = Phaser.Math.Distance.Between(pointer.x, pointer.y, curEndPt.x, curEndPt.y);
+                                if (minDist > curDist - 25) chosenDir = drivingDir; // not clearly closer — keep current
+                            }
+                        }
+                    }
                 }
 
                 // Require a minimum drag distance before locking a path
@@ -910,7 +925,7 @@
                     if (t !== null && t >= drivingT - 0.05) {  // allow tiny backward adjustment
                         const snap = drivingPath.getPoint(t);
                         const snapDist = Phaser.Math.Distance.Between(pointer.x, pointer.y, snap.x, snap.y);
-                        if (snapDist < 120) {      // within ~120px of path = on road
+                        if (snapDist < 150) {      // within ~150px of path = on road (raised from 120 for better mobile coverage)
                             drivingCar.x = snap.x;
                             drivingCar.y = snap.y;
                             const tang = drivingPath.getTangent(t);
@@ -1452,6 +1467,11 @@
         }
         function closeQuestionBubble() {
             document.getElementById('question-bubble').classList.remove('show');
+            // Briefly disable Phaser input to prevent click-through to canvas
+            if (gameScene && gameScene.input) {
+                gameScene.input.enabled = false;
+                setTimeout(() => { if (gameScene && gameScene.input) gameScene.input.enabled = true; }, 200);
+            }
         }
 
         // ==========================================
