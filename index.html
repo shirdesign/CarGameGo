@@ -60,14 +60,14 @@
         /* --- Intro overlay --- */
         #intro-overlay {
             display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(160deg, #EBF4E2 0%, #F5EDE8 100%);
             flex-direction: column; justify-content: center; align-items: center;
             z-index: 10000; padding: 20px;
         }
         .intro-box {
             background: white; border-radius: 24px; padding: 36px 40px;
             max-width: 500px; width: 95%; text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10); border-top: 5px solid #F26D5C;
             display: flex; flex-direction: column; gap: 16px; align-items: center;
         }
         .intro-box h1 { color: #F26D5C; margin: 0; font-size: 28px; }
@@ -78,7 +78,7 @@
         /* --- Pre-question bubble --- */
         #question-bubble {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.62); backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.40); backdrop-filter: blur(3px);
             justify-content: center; align-items: center; z-index: 9995;
         }
         #question-bubble.show { display: flex; }
@@ -198,9 +198,9 @@
         .btn-secondary:hover { background: #636e72; }
 
         .btn-rules {
-            background: #2980b9; font-size: 14px; padding: 9px 14px;
+            background: #5C9830; font-size: 14px; padding: 9px 14px;
         }
-        .btn-rules:hover { background: #1a6fa0; }
+        .btn-rules:hover { background: #4A7A24; }
 
         .status-box { padding: 12px 14px; border-radius: 10px; text-align: center; font-weight: bold; display: none; font-size: 14px; }
         .success { background-color: #eafaf1; color: #1e8449; border: 1px solid #a9dfbf; }
@@ -213,12 +213,12 @@
         /* מסך סיום + קונפטי */
         #end-screen {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(10,10,30,0.88);
+            background: linear-gradient(135deg, rgba(50,130,30,0.96) 0%, rgba(75,165,50,0.96) 100%);
             flex-direction: column; justify-content: center; align-items: center;
             z-index: 9997; text-align: center; gap: 18px;
         }
         #end-screen.show { display: flex; }
-        #end-screen h1 { color: #F26D5C; font-size: 48px; margin: 0; text-shadow: 0 2px 12px rgba(242,109,92,0.5); }
+        #end-screen h1 { color: #FFE033; font-size: 48px; margin: 0; text-shadow: 0 2px 12px rgba(0,0,0,0.3); }
         #end-screen p  { color: #fff; font-size: 22px; margin: 0; }
 
         .confetti-piece {
@@ -248,7 +248,7 @@
         /* מסך שוטר */
         #police-screen {
             display: none; position: fixed; top:0; left:0; right:0; bottom:0;
-            background: rgba(0,0,0,0.75); backdrop-filter: blur(3px);
+            background: rgba(0,0,0,0.50); backdrop-filter: blur(2px);
             flex-direction: column; justify-content: center; align-items: center;
             z-index: 9996;
         }
@@ -266,7 +266,7 @@
         /* modal חוקי עזר */
         #rules-modal {
             display: none; position: fixed; top:0; left:0; right:0; bottom:0;
-            background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
+            background: rgba(0,0,0,0.45); backdrop-filter: blur(3px);
             justify-content: center; align-items: center; z-index: 9999;
         }
         #rules-modal.show { display: flex; }
@@ -279,7 +279,7 @@
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 14px; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0;
         }
-        .modal-header h2 { color: #2980b9; }
+        .modal-header h2 { color: #F26D5C; }
         .close-btn {
             background: #f0f0f0; border: none; font-size: 16px; cursor: pointer;
             color: #555; padding: 5px 10px; border-radius: 8px; font-weight: bold;
@@ -819,6 +819,7 @@
         let drivingPath = null;
         let drivingDir  = null;
         let drivingT    = 0;
+        let drivingKey  = null;  // מקש החץ שבחר את המסלול הנוכחי
         let isDraggingB = false;
 
         // נהיגה במקלדת
@@ -1041,6 +1042,7 @@
                 drivingDir  = chosen;
                 drivingT    = 0;
             }
+            drivingKey = key;  // מפתח זה מקדם את המכונית ב-update()
         }
 
         function handleKeyUp(event) {
@@ -1051,9 +1053,7 @@
             // נהיגה ידנית עם מקלדת — שלב ב׳ בלבד
             if (currentPhase !== 'drive' || !drivingCar || !drivingPath) return;
 
-            const arrowHeld = keysHeld.has('ArrowUp')    || keysHeld.has('ArrowDown') ||
-                              keysHeld.has('ArrowLeft')  || keysHeld.has('ArrowRight');
-            if (!arrowHeld) return;
+            if (!drivingKey || !keysHeld.has(drivingKey)) return;
 
             // ~2 שניות לעבור את כל המסלול בלחיצה רציפה
             drivingT = Math.min(1, drivingT + 0.008);
@@ -1077,6 +1077,7 @@
             currentPhase = 'select';
             movedCars    = new Set();
             drivingCar   = null; drivingPath = null; drivingDir = null; drivingT = 0;
+            drivingKey   = null;
             isDraggingB  = false;
             keysHeld.clear();
 
@@ -1272,6 +1273,7 @@
             drivingPath  = null;
             drivingDir   = null;
             drivingT     = 0;
+            drivingKey   = null;
             isDraggingB  = false;
             car.pathFollower.t = 0;
 
@@ -1348,7 +1350,7 @@
                     car.hasMoved = true;
                     car.disableInteractive();
                     movedCars.add(car.name);
-                    drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0;
+                    drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0; drivingKey = null;
                     showSuccessToast('מצוין! 🎯');
                     const levelData = LEVELS[currentLevelIndex];
                     if (movedCars.size >= levelData.solution.length) {
@@ -1491,6 +1493,7 @@
             // Preserve progress of already-moved cars — only reset the remaining ones
             currentPhase = 'select';
             drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0;
+            drivingKey = null;
             isDraggingB = false;
             const levelData = LEVELS[currentLevelIndex];
             levelData.cars.forEach(cd => {
