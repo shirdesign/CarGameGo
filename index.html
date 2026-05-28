@@ -1377,11 +1377,13 @@
             const isWrong    = !drivingDir || !expectedDir || drivingDir !== expectedDir;
 
             if (isWrong) {
-                // Wrong destination — shake & snap back to start
-                const car     = drivingCar;
-                const path    = drivingPath;
-                const carData = levelData.cars.find(c => c.id === car.name);
-                car.disableInteractive();  // prevent double-clicks during shake
+                // Wrong destination — shake, snap back, then show police screen
+                const car      = drivingCar;
+                const path     = drivingPath;
+                const carData  = levelData.cars.find(c => c.id === car.name);
+                const wrongDir = drivingDir;
+                drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0; drivingKey = null;
+                car.disableInteractive();
                 gameScene.tweens.add({
                     targets: car, x: car.x + 8,
                     duration: 60, yoyo: true, repeat: 3,
@@ -1390,15 +1392,13 @@
                         car.x = sp.x; car.y = sp.y;
                         if (carData) car.rotation = Phaser.Math.DegToRad(carData.angle);
                         car.pathFollower.t = 0;
-                        drivingPath = null; drivingDir = null; drivingT = 0;
-                        car.setTint(0x55ff55);
-                        car.setInteractive({ cursor: 'grab', useHandCursor: true });
-                        // brief error hint in status
-                        const box = document.getElementById('status-msg');
-                        box.className = 'status-box error';
-                        box.innerText = 'נסו שוב — זו לא הדרך הנכונה!';
-                        box.style.display = 'block';
-                        setTimeout(() => { box.style.display = 'none'; }, 2200);
+                        car.setTint(0xffffff);
+                        car.setInteractive({ cursor: 'pointer', useHandCursor: true });
+                        const errText = (wrongDir && wrongDir.endsWith('_wrong'))
+                            ? (levelData.wrongLaneText || 'נסעת לנתיב הלא נכון. בדקו את חוקי הנסיעה ונסו שוב.')
+                            : (levelData.errorText    || 'זו לא הדרך הנכונה. בדקו את חוקי הקדימה ונסו שוב.');
+                        document.getElementById('police-error-text').innerHTML = errText;
+                        document.getElementById('police-screen').classList.add('show');
                     }
                 });
                 return;
