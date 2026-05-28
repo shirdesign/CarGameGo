@@ -1376,8 +1376,8 @@
                         car.setTint(0xffffff);
                         car.setInteractive({ cursor: 'pointer', useHandCursor: true });
                         const errText = (wrongDir && wrongDir.endsWith('_wrong'))
-                            ? (levelData.wrongLaneText || 'נסעת לנתיב הלא נכון. בדקו את חוקי הנסיעה ונסו שוב.')
-                            : (levelData.errorText    || 'זו לא הדרך הנכונה. בדקו את חוקי הקדימה ונסו שוב.');
+                            ? (levelData.errorText || 'אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.')
+                            : 'בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בכיוון הנכון.';
                         document.getElementById('police-error-text').innerHTML = errText;
                         document.getElementById('police-screen').classList.add('show');
                     }
