@@ -1458,7 +1458,7 @@
         function restartGame() {
             document.getElementById('end-screen').classList.remove('show');
             currentLevelIndex = 0;
-            initLevel();
+            document.getElementById('intro-overlay').style.display = 'flex';
         }
 
         function showEndScreen() {
