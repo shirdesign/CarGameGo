@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Traffic Logic Game</title>
+    <title>משחק קדימות הדרך</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
         body {
@@ -29,13 +29,6 @@
             width: 100%;
         }
 
-        #how-to-play-bar {
-            background: #fff8f0; border-right: 4px solid #F26D5C;
-            padding: 10px 18px; margin-bottom: 10px; border-radius: 10px;
-            font-size: 13px; line-height: 1.7; color: #444; width: 100%;
-            box-sizing: border-box; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        }
-
         #rotate-overlay {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.92); color: white;
@@ -53,9 +46,6 @@
         }
 
         #game-container:active { cursor: grabbing; }
-
-        /* how-to bar no longer shown — instructions live in the right panel */
-        #how-to-play-bar { display: none; }
 
         /* --- Intro overlay --- */
         #intro-overlay {
@@ -148,10 +138,6 @@
         @media (max-width: 1100px) {
             body { align-items: flex-start; }
             #traffic-game-container { width: 100%; max-width: 100%; padding: 0; }
-            #how-to-play-bar {
-                border-radius: 0; margin-bottom: 0;
-                font-size: 12px; padding: 6px 12px; line-height: 1.4;
-            }
             /* שורת המשחק נשארת row — משחק + סידבר זה לצד זה */
             #game-ui-row { align-items: stretch; }
             #game-container { border-radius: 0; box-shadow: none; flex-shrink: 0; }
@@ -358,13 +344,9 @@
     <div id="intro-overlay">
         <div class="intro-box">
             <div class="intro-logo">🚗</div>
-            <h1>Traffic Logic Game</h1>
+            <h1>משחק קדימות הדרך</h1>
             <div id="intro-text">
                 <p><strong>ברוכים הבאים למשחק קדימות הדרך!</strong></p>
-                <div class="placeholder">
-                    📝 <strong>הערה למפתח:</strong> טקסט מסך הפתיחה הסופי יסופק על-ידי הלקוחה.<br>
-                    כאן יופיעו: הסבר על המשחק ומטרתו, הדגמת רכב שמגיע ליעד, והכוונה לחוקי העזר.
-                </div>
             </div>
             <div class="how-to-panel" style="width:100%; margin:0;">
                 <strong>✏️ איך משחקים?</strong>
@@ -444,13 +426,10 @@
     </div>
 
     <div id="rotate-overlay">
-        📱<br>סובבי את המכשיר לרוחב<br>כדי לשחק
+        📱<br>סובבו את המכשיר לרוחב<br>כדי לשחק
     </div>
 
     <div id="traffic-game-container">
-        <div id="how-to-play-bar">
-            <strong>איך משחקים?</strong>&nbsp; שלב א׳: לחצי על המכונית שיש לה זכות קדימה.&nbsp;&nbsp; שלב ב׳: גרירי אותה לנקודת היעד שלה.
-        </div>
         <div id="game-ui-row">
             <!-- ב-Inspect: בדקי על #game-container את data-bg-image ו-data-level-id כדי לראות איזו תמונת רקע מוצגת -->
             <div id="game-container"></div>
@@ -458,7 +437,6 @@
             <div id="ui-layer">
                 <div class="header" id="level-title">
                     שאלה
-                    <a href="admin.html" style="float: left; color: white; text-decoration: none; font-size: 14px; margin-top: 5px;">⚙️ אדמין</a>
                 </div>
                 <div class="content">
                     <div class="how-to-panel">
@@ -848,11 +826,9 @@
 
         // מחשב את גודל ה-container בדיוק לפי המסך ומרענן את Phaser
         function adjustGameSize() {
-            const bar       = document.getElementById('how-to-play-bar');
             const container = document.getElementById('game-container');
-            const barH   = bar ? bar.offsetHeight : 0;
             const maxW   = window.innerWidth;
-            const maxH   = window.innerHeight - barH - 4;
+            const maxH   = window.innerHeight - 4;
 
             // שמור על יחס 4:3 בתוך maxW × maxH
             let w, h;
@@ -1147,6 +1123,7 @@
         // ==========================================
         function initLevel() {
             // Reset state
+            document.getElementById('ui-instructions').innerText = '';
             currentPhase = 'select';
             movedCars    = new Set();
             drivingCar   = null; drivingPath = null; drivingDir = null; drivingT = 0;
@@ -1287,9 +1264,9 @@
         //   PHASE A — SELECT THE RIGHT CAR
         // ==========================================
         const phaseATexts = [
-            'סמן את המכונית שיש לה זכות קדימה ראשונה, העזר בחוקים',
-            'סמן את המכונית השניה שיש לה זכות קדימה בצומת, העזר בחוקים',
-            'סמן את המכונית השלישית שבצומת'
+            'סמנו את המכונית שיש לה זכות קדימה ראשונה, העזרו בחוקים',
+            'סמנו את המכונית השנייה שיש לה זכות קדימה בצומת, העזרו בחוקים',
+            'סמנו את המכונית השלישית שבצומת'
         ];
 
         function startPhaseSelect() {
@@ -1299,9 +1276,9 @@
 
             let instruction;
             if (levelData.orderedSolution === false) {
-                instruction = step === 0 ? 'בחר מכונית להסעה, העזר בחוקים' : 'בחר את המכונית הבאה להסעה';
+                instruction = step === 0 ? 'בחרו מכונית להסעה, העזרו בחוקים' : 'בחרו את המכונית הבאה להסעה';
             } else {
-                instruction = phaseATexts[step] || `סמן את המכונית מספר ${step + 1} שבצומת`;
+                instruction = phaseATexts[step] || `סמנו את המכונית מספר ${step + 1} שבצומת`;
             }
             document.getElementById('ui-instructions').innerText = instruction;
 
@@ -1350,7 +1327,7 @@
             isDraggingB  = false;
             car.pathFollower.t = 0;
 
-            document.getElementById('ui-instructions').innerText = 'הסע את המכונית לנקודת היעד שלה במסלול המדויק';
+            document.getElementById('ui-instructions').innerText = 'הסיעו את המכונית לנקודת היעד שלה במסלול המדויק';
 
             const levelData = LEVELS[currentLevelIndex];
             levelData.cars.forEach(cd => {
