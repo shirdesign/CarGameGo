@@ -7,11 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
         body {
-            margin: 0; padding: 0; background-color: #e0e0e0;
+            margin: 0; padding: 20px 0; background-color: #e0e0e0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;          /* מונע גלילה אופקית */
-            display: flex; justify-content: center; align-items: flex-start;
-            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; box-sizing: border-box;
             touch-action: pan-y;         /* מאפשר גלילה אנכית בגוף הדף */
         }
 
@@ -255,13 +255,63 @@
         #police-screen.show { display: flex; }
         .police-box {
             background: #fff; border-radius: 20px;
-            padding: 36px 32px 28px; text-align: center; max-width: 320px; width: 90%;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+            padding: 36px 32px 28px; text-align: center; max-width: 340px; width: 90%;
+            box-shadow: 0 16px 50px rgba(0,0,0,0.40);
             border-top: 6px solid #F26D5C;
             display: flex; flex-direction: column; gap: 12px;
+            animation: bubble-in 0.3s ease;
         }
         .police-box h2 { color: #F26D5C; margin: 0; font-size: 26px; }
         .police-box p  { color: #555; margin: 0; font-size: 16px; line-height: 1.4; }
+
+        /* --- Car success popup (brief auto-close) --- */
+        #car-success-popup {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.30); backdrop-filter: blur(2px);
+            justify-content: center; align-items: center; z-index: 9997;
+            pointer-events: none;
+        }
+        #car-success-popup.show { display: flex; }
+        .car-success-box {
+            background: white; border-radius: 24px; padding: 32px 44px;
+            text-align: center; max-width: 300px;
+            box-shadow: 0 16px 50px rgba(0,0,0,0.30);
+            border-top: 6px solid #5C9830;
+            animation: bubble-in 0.25s ease;
+            display: flex; flex-direction: column; gap: 8px; align-items: center;
+        }
+        .car-success-icon { font-size: 56px; line-height: 1; }
+        .car-success-title { font-size: 32px; font-weight: bold; color: #5C9830; }
+        .car-success-sub { font-size: 15px; color: #888; }
+
+        /* --- Level success popup --- */
+        #level-success-popup {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.45); backdrop-filter: blur(3px);
+            justify-content: center; align-items: center; z-index: 9996;
+        }
+        #level-success-popup.show { display: flex; }
+        .level-success-box {
+            background: white; border-radius: 24px; padding: 28px 32px;
+            max-width: 450px; width: 92%; max-height: 85vh; overflow-y: auto;
+            text-align: center;
+            box-shadow: 0 16px 50px rgba(0,0,0,0.40);
+            border-top: 6px solid #5C9830;
+            animation: bubble-in 0.3s ease;
+            display: flex; flex-direction: column; gap: 14px; align-items: center;
+        }
+        .level-success-badge {
+            background: #5C9830; color: white; font-size: 12px; font-weight: bold;
+            padding: 3px 16px; border-radius: 12px; letter-spacing: 0.5px;
+        }
+        .level-success-title { font-size: 30px; font-weight: bold; color: #5C9830; margin: 0; }
+        .level-success-text {
+            font-size: 15px; color: #444; line-height: 1.7; text-align: right; width: 100%;
+            background: #f9fff5; border-radius: 10px; padding: 12px 14px;
+            border: 1px solid #d4edba; box-sizing: border-box;
+        }
+        #level-success-img { width: 100%; border-radius: 10px; border: 2px solid #eee; display: none; }
+        .level-success-btns { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 
         /* modal חוקי עזר */
         #rules-modal {
@@ -356,6 +406,29 @@
             <div class="bubble-text" id="bubble-text"></div>
             <div class="bubble-hint">לפרטים נוספים — קראו את הפאנל הימני 👉</div>
             <button class="btn btn-primary" style="width:180px; margin-top:4px;" onclick="closeQuestionBubble()">בואו נתחיל! ◀</button>
+        </div>
+    </div>
+
+    <!-- פופאפ הצלחת רכב בודד (מצוין!) -->
+    <div id="car-success-popup">
+        <div class="car-success-box">
+            <div class="car-success-icon">🎯</div>
+            <div class="car-success-title">מצוין!</div>
+            <div class="car-success-sub" id="car-success-sub">ממשיכים לרכב הבא...</div>
+        </div>
+    </div>
+
+    <!-- פופאפ סיום שלב -->
+    <div id="level-success-popup">
+        <div class="level-success-box">
+            <div class="level-success-badge" id="level-success-badge">שאלה 1</div>
+            <div class="level-success-title">✅ כל הכבוד!</div>
+            <div class="level-success-text" id="level-success-text"></div>
+            <img id="level-success-img" alt="Solution">
+            <div class="level-success-btns">
+                <button class="btn btn-secondary" onclick="closeLevelSuccessAndRetry()">🔄 נסה שוב</button>
+                <button class="btn btn-primary" id="level-success-next-btn" onclick="closeLevelSuccessAndNext()">לשאלה הבאה ←</button>
+            </div>
         </div>
     </div>
 
@@ -1351,12 +1424,13 @@
                     car.disableInteractive();
                     movedCars.add(car.name);
                     drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0; drivingKey = null;
-                    showSuccessToast('מצוין! 🎯');
                     const levelData = LEVELS[currentLevelIndex];
-                    if (movedCars.size >= levelData.solution.length) {
-                        setTimeout(showLevelSuccess, 900);
+                    const isLastCar = movedCars.size >= levelData.solution.length;
+                    showCarSuccessPopup(isLastCar);
+                    if (isLastCar) {
+                        setTimeout(showLevelSuccess, 1400);
                     } else {
-                        setTimeout(startPhaseSelect, 700);
+                        setTimeout(startPhaseSelect, 1100);
                     }
                 }
             });
@@ -1367,27 +1441,28 @@
         // ==========================================
         function showLevelSuccess() {
             const levelData = LEVELS[currentLevelIndex];
-            const statusBox = document.getElementById('status-msg');
-            const retryBtn  = document.getElementById('retry-btn');
-            const nextBtn   = document.getElementById('next-btn');
-            const solImg    = document.getElementById('solution-img');
-            if (levelData.solutionImage) {
-                solImg.src = levelData.solutionImage;
-                solImg.style.display = 'block';
-            }
-            statusBox.className = 'status-box success';
-            statusBox.innerText = levelData.solutionText || 'כל הכבוד! תשובה נכונה.';
-            statusBox.style.display = 'block';
-            document.getElementById('buttons-container').style.display = 'flex';
-            retryBtn.style.display = 'none';
-            const isLast = (currentLevelIndex === LEVELS.length - 1);
-            if (isLast) {
-                nextBtn.style.display = 'none';
-                setTimeout(showEndScreen, 1500);
-            } else {
-                nextBtn.style.display = 'block';
-                nextBtn.innerText = 'לשאלה הבאה';
-            }
+            document.getElementById('level-success-badge').textContent = `שאלה ${levelData.id}`;
+            document.getElementById('level-success-text').textContent  = levelData.solutionText || 'כל הכבוד! תשובה נכונה.';
+            const img = document.getElementById('level-success-img');
+            if (levelData.solutionImage) { img.src = levelData.solutionImage; img.style.display = 'block'; }
+            else { img.style.display = 'none'; }
+            const nextBtn = document.getElementById('level-success-next-btn');
+            const isLast  = (currentLevelIndex === LEVELS.length - 1);
+            nextBtn.style.display = isLast ? 'none' : 'block';
+            document.getElementById('level-success-popup').classList.add('show');
+            if (isLast) setTimeout(() => {
+                document.getElementById('level-success-popup').classList.remove('show');
+                showEndScreen();
+            }, 3000);
+        }
+
+        function closeLevelSuccessAndNext() {
+            document.getElementById('level-success-popup').classList.remove('show');
+            nextLevel();
+        }
+        function closeLevelSuccessAndRetry() {
+            document.getElementById('level-success-popup').classList.remove('show');
+            initLevel();
         }
 
         function nextLevel() {
@@ -1433,22 +1508,14 @@
         }
 
         // ==========================================
-        //   SUCCESS TOAST
+        //   CAR SUCCESS POPUP
         // ==========================================
-        function showSuccessToast(text) {
-            const toast = document.createElement('div');
-            toast.className = 'success-toast';
-            toast.textContent = text;
-            document.body.appendChild(toast);
-            requestAnimationFrame(() => {
-                toast.style.opacity = '1';
-                toast.style.transform = 'translate(-50%, -50%) scale(1)';
-            });
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translate(-50%, -50%) scale(0.8)';
-                setTimeout(() => toast.remove(), 400);
-            }, 900);
+        function showCarSuccessPopup(isLastCar) {
+            document.getElementById('car-success-sub').textContent =
+                isLastCar ? 'סיימת את כל השלב! 🏁' : 'ממשיכים לרכב הבא...';
+            const popup = document.getElementById('car-success-popup');
+            popup.classList.add('show');
+            setTimeout(() => popup.classList.remove('show'), 1200);
         }
 
         // ==========================================
