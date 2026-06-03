@@ -6,10 +6,10 @@
     <title>משחק הצמתים</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
+        html { overflow-x: hidden; }     /* מונע גלילה אופקית — על html כדי שלא ישבש position:fixed במובייל */
         body {
             margin: 0; padding: 20px 0; background-color: #e0e0e0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow-x: hidden;          /* מונע גלילה אופקית */
             display: flex; justify-content: center; align-items: center;
             min-height: 100vh; box-sizing: border-box;
             touch-action: pan-y;         /* מאפשר גלילה אנכית בגוף הדף */
@@ -243,6 +243,7 @@
         .police-box {
             background: #fff; border-radius: 20px;
             padding: 36px 32px 28px; text-align: center; max-width: 340px; width: 90%;
+            max-height: 90dvh; overflow-y: auto;
             box-shadow: 0 16px 50px rgba(0,0,0,0.40);
             border-top: 6px solid #F26D5C;
             display: flex; flex-direction: column; gap: 12px;
@@ -250,6 +251,17 @@
         }
         .police-box h2 { color: #F26D5C; margin: 0; font-size: 26px; }
         .police-box p  { color: #555; margin: 0; font-size: 16px; line-height: 1.4; }
+        @media (max-height: 520px) {
+            .police-box {
+                padding: 12px 20px 12px; gap: 6px; border-radius: 14px;
+                flex-direction: row; flex-wrap: wrap; align-items: center;
+                max-width: 520px;
+            }
+            .police-box img { width: 60px !important; height: 60px !important; }
+            .police-box h2 { font-size: 18px; }
+            .police-box p  { font-size: 13px; flex: 1 1 100%; }
+            .police-box .btn { font-size: 12px; padding: 7px 10px; flex: 1 1 45%; }
+        }
 
         /* --- Car success popup (brief auto-close) --- */
         #car-success-popup {
@@ -1007,6 +1019,8 @@
         let destinationMarkers = [];
         let dragStartX   = 0;
         let dragStartY   = 0;
+        let lastPointerX = 0;
+        let lastPointerY = 0;
 
         // ==========================================
         //   PHASER: PRELOAD
@@ -1040,6 +1054,12 @@
             this.input.on('pointerdown', (pointer) => {
                 dragStartX = pointer.x;
                 dragStartY = pointer.y;
+                lastPointerX = pointer.x;
+                lastPointerY = pointer.y;
+                // Allow drag to start from anywhere on canvas during drive phase
+                if (currentPhase === 'drive' && drivingCar) {
+                    isDraggingB = true;
+                }
             });
 
             this.input.on('pointermove', (pointer) => {
@@ -1094,9 +1114,22 @@
 
                 if (!drivingPath) return;
 
-                // t = closest point on path to the pointer — car follows the drag
+                // Delta-based advancement: project pointer movement onto path tangent.
+                // This prevents the car from getting stuck when the pointer is not
+                // perfectly aligned with the path (common on mobile touch).
+                const pdx = pointer.x - lastPointerX;
+                const pdy = pointer.y - lastPointerY;
+                lastPointerX = pointer.x;
+                lastPointerY = pointer.y;
+
+                const tangent = drivingPath.getTangent(Math.min(drivingT, 0.999));
+                const forward = pdx * tangent.x + pdy * tangent.y;
+                const pathLen = drivingPath.getLength() || 400;
+                const deltaT = forward / pathLen;
+
+                // Also check closest point on path — take whichever is further ahead
                 const pointerT = findClosestPointOnPath(drivingPath, pointer.x, pointer.y) ?? drivingT;
-                const proposedT = Math.min(Math.max(pointerT, drivingT), 1.0); // never go backwards
+                const proposedT = Math.min(Math.max(pointerT, drivingT + deltaT, drivingT), 1.0);
 
                 if (proposedT > drivingT) {
                     drivingT = proposedT;
@@ -1485,6 +1518,8 @@
                     isDraggingB   = true;
                     dragStartX    = pointer.x;
                     dragStartY    = pointer.y;
+                    lastPointerX  = pointer.x;
+                    lastPointerY  = pointer.y;
                     dragBaseT     = drivingT;  // continue from current position
                     pathStartDist = 0;
                     // Note: drivingDir/drivingPath may already be set by arrow key,
