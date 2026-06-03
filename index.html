@@ -939,25 +939,24 @@
 
                 let chosenDir = dirs[0];
                 if (dirs.length > 1) {
-                    // Once the car is 40%+ along a path, commit — don't switch
-                    if (drivingT > 0.4 && drivingDir) {
-                        chosenDir = drivingDir;
+                    const baseDir = d => d.replace('_wrong', '');
+                    const allSameBase = dirs.every(d => baseDir(d) === baseDir(dirs[0]));
+
+                    if (allSameBase) {
+                        // Lane-choice paths (left vs left_wrong): no early lock —
+                        // player aims at specific flag via endpoint-distance until t=0.9.
+                        let best = dirs[0], bestDist = Infinity;
+                        for (const d of dirs) {
+                            const p = activePaths[drivingCar.name][d];
+                            const ep = p.getPoint(1);
+                            const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, ep.x, ep.y);
+                            if (dist < bestDist) { bestDist = dist; best = d; }
+                        }
+                        chosenDir = best;
                     } else {
-                        // If paths only differ by _wrong suffix (same base direction, different lanes),
-                        // use endpoint-distance so player aims at a specific flag.
-                        // Otherwise use angle-based selection (better for distinct directions).
-                        const baseDir = d => d.replace('_wrong', '');
-                        const allSameBase = dirs.every(d => baseDir(d) === baseDir(dirs[0]));
-                        if (allSameBase) {
-                            // endpoint-distance: pick path whose endpoint is closest to pointer
-                            let best = dirs[0], bestDist = Infinity;
-                            for (const d of dirs) {
-                                const p = activePaths[drivingCar.name][d];
-                                const ep = p.getPoint(1);
-                                const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, ep.x, ep.y);
-                                if (dist < bestDist) { bestDist = dist; best = d; }
-                            }
-                            chosenDir = best;
+                        // Distinct directions: lock at 40% to prevent accidental direction switches
+                        if (drivingT > 0.4 && drivingDir) {
+                            chosenDir = drivingDir;
                         } else {
                             const dragAngle = Math.atan2(dy, dx);
                             const newDir = pickDirByWorldAngle(drivingCar.name, dragAngle, dirs);
@@ -1070,14 +1069,12 @@
             const arrowAngle = worldAngles[key];
             if (arrowAngle === undefined) return;
 
-            const hasLaneChoice = dirs.some(d => d.includes('_wrong'));
             let chosen;
             if (dirs.length === 1) {
                 chosen = dirs[0];
-            } else if (hasLaneChoice) {
-                // Lane choice requires drag (endpoint-distance); keyboard keeps current
-                chosen = drivingDir || dirs[0];
             } else {
+                // Always use world-angle to pick path — works for both distinct directions
+                // (straight/left/right) and same-base lane choices (left vs left_wrong).
                 chosen = pickDirByWorldAngle(drivingCar.name, arrowAngle, dirs);
             }
 
