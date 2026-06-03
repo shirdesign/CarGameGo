@@ -878,7 +878,8 @@
         let drivingDir  = null;
         let drivingT    = 0;
         let drivingKey  = null;  // מקש החץ שבחר את המסלול הנוכחי
-        let isDraggingB = false;
+        let isDraggingB    = false;
+        let pathStartDist  = 0; // total drag distance when current path was selected
 
         // נהיגה במקלדת
         const keysHeld = new Set();
@@ -965,36 +966,35 @@
                     }
                 }
 
+                const totalDist = Math.sqrt(dx*dx + dy*dy);
+
                 if (chosenDir !== drivingDir) {
-                    const newPath = activePaths[drivingCar.name][chosenDir];
-                    const newT    = drivingPath
-                        ? (findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? 0)
-                        : 0;
-                    drivingPath = newPath;
-                    drivingDir  = chosenDir;
-                    drivingT    = newT;
+                    // New path selected — record drag distance at switch point and reset t
+                    pathStartDist = totalDist;
+                    drivingPath   = activePaths[drivingCar.name][chosenDir];
+                    drivingDir    = chosenDir;
+                    drivingT      = 0;
                 }
 
-                // Move car to closest point on current path
+                // Advance t based on how far the user has dragged since selecting this path.
+                // This lets the car follow any curved path regardless of where the pointer is.
                 if (drivingPath) {
-                    const t = findClosestPointOnPath(drivingPath, pointer.x, pointer.y);
-                    if (t !== null && t >= drivingT - 0.05) {  // allow tiny backward adjustment
-                        const snap = drivingPath.getPoint(t);
-                        const snapDist = Phaser.Math.Distance.Between(pointer.x, pointer.y, snap.x, snap.y);
-                        if (snapDist < 150) {      // within ~150px of path = on road (raised from 120 for better mobile coverage)
-                            drivingCar.x = snap.x;
-                            drivingCar.y = snap.y;
-                            const tang = drivingPath.getTangent(t);
-                            const targetAngle = tang.angle() + Math.PI / 2;
-                            drivingCar.rotation = Phaser.Math.Angle.RotateTo(drivingCar.rotation, targetAngle, 0.15);
-                            drivingT = t;
-                            drivingCar.pathFollower.t = t;
-                            if (t >= 0.9) {        // reached destination
-                                isDraggingB = false;
-                                completeDrive();
-                            }
+                    const progressDist = Math.max(0, totalDist - pathStartDist);
+                    const pathLen      = drivingPath.getLength();
+                    const proposedT    = Math.min(progressDist / pathLen, 1.0);
+                    if (proposedT > drivingT) {
+                        drivingT = proposedT;
+                        drivingCar.pathFollower.t = drivingT;
+                        const pt   = drivingPath.getPoint(drivingT);
+                        drivingCar.x = pt.x;
+                        drivingCar.y = pt.y;
+                        const tang = drivingPath.getTangent(drivingT);
+                        drivingCar.rotation = Phaser.Math.Angle.RotateTo(
+                            drivingCar.rotation, tang.angle() + Math.PI / 2, 0.15);
+                        if (drivingT >= 0.9) {
+                            isDraggingB = false;
+                            completeDrive();
                         }
-                        // else: off-road — car stays at last valid position (drivingT)
                     }
                 }
             });
@@ -1240,10 +1240,13 @@
                 if (currentPhase === 'select') {
                     handleCarClick(car);
                 } else if (currentPhase === 'drive' && car === drivingCar) {
-                    isDraggingB = true;
-                    dragStartX  = pointer.x;
-                    dragStartY  = pointer.y;
-                    // drivingPath may already be set from a previous partial drag — keep it
+                    isDraggingB   = true;
+                    dragStartX    = pointer.x;
+                    dragStartY    = pointer.y;
+                    pathStartDist = 0;
+                    drivingT      = 0;
+                    drivingDir    = null;
+                    drivingPath   = null;
                 }
             });
 
