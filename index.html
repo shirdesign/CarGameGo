@@ -423,6 +423,7 @@
                 <h2 style="margin:0; font-size:20px;">📖 חוקי עזר</h2>
                 <button class="close-btn" onclick="closeRulesModal()">✕</button>
             </div>
+            <p id="rules-intro" style="font-size:14px; color:#888; font-style:italic; margin:0 0 12px 0; line-height:1.5; display:none;"></p>
             <ul id="rules-list"></ul>
         </div>
     </div>
@@ -532,7 +533,7 @@
                     { color: 'yellow', direction: 'left' }
                 ],
                 bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
-                rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
+                rules: ['לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות','[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 2,
@@ -572,7 +573,7 @@
                     { color: 'yellow', direction: 'left' }
                 ],
                 bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
-                rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
+                rules: ['לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות','[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 3,
@@ -612,7 +613,7 @@
                     { color: 'yellow', direction: 'straight' }
                 ],
                 bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
-                rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
+                rules: ['לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות','[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 4,
@@ -652,7 +653,7 @@
                     { color: 'red', direction: 'straight' }
                 ],
                 bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
-                rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
+                rules: ['לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות','[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 5,
@@ -692,7 +693,7 @@
                     { color: 'blue', direction: 'straight' }
                 ],
                 bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
-                rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
+                rules: ['לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות','[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 6,
@@ -709,10 +710,12 @@
 
                 paths: {
                     red: {
-                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] }
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 320] },
+                        left_wrong: { type: 'spline', start: [400, 600], points: [400, 450, 390, 340, 340, 260, 200, 245, 0, 240] }
                     },
                     yellow: {
-                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] }
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 420, 600] },
+                        left_wrong: { type: 'spline', start: [800, 300], points: [600, 300, 440, 295, 395, 350, 355, 450, 320, 600] }
                     }
                 },
 
@@ -721,7 +724,7 @@
                     { color: 'yellow', direction: 'left' }
                 ],
                 bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
-                rules: ['פונה שמאלה מחד-סטרי: מנתיב שמאלי אל נתיב שמאלי','פונה שמאלה מדו-סטרי: מנתיב ימני אל נתיב ימני']
+                rules: ['לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות','פונה שמאלה מחד-סטרי: מנתיב שמאלי אל נתיב שמאלי','פונה שמאלה מדו-סטרי: מנתיב ימני אל נתיב ימני']
             },
             {
                 id: 7,
@@ -738,10 +741,12 @@
 
                 paths: {
                     red: {
-                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] }
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 320] },
+                        left_wrong: { type: 'spline', start: [400, 600], points: [400, 450, 390, 340, 340, 260, 200, 245, 0, 240] }
                     },
                     yellow: {
-                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] }
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 420, 600] },
+                        left_wrong: { type: 'spline', start: [800, 300], points: [600, 300, 440, 295, 395, 350, 355, 450, 320, 600] }
                     }
                 },
 
@@ -750,7 +755,7 @@
                     { color: 'red', direction: 'left' }
                 ],
                 bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
-                rules: ['פונה שמאלה מחד-סטרי: מנתיב שמאלי אל נתיב שמאלי','פונה שמאלה מדו-סטרי: מנתיב ימני אל נתיב ימני']
+                rules: ['לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות','פונה שמאלה מחד-סטרי: מנתיב שמאלי אל נתיב שמאלי','פונה שמאלה מדו-סטרי: מנתיב ימני אל נתיב ימני']
             },
             {
                 id: 8,
@@ -767,10 +772,12 @@
 
                 paths: {
                     red: {
-                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] }
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 320] },
+                        left_wrong: { type: 'spline', start: [400, 600], points: [400, 450, 390, 340, 340, 260, 200, 245, 0, 240] }
                     },
                     yellow: {
-                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] }
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 420, 600] },
+                        left_wrong: { type: 'spline', start: [800, 300], points: [600, 300, 440, 295, 395, 350, 345, 450, 300, 600] }
                     }
                 },
 
@@ -779,7 +786,7 @@
                     { color: 'red', direction: 'left' }
                 ],
                 bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
-                rules: ['בכביש עם שטח הפרדה: פנה מנתיב ימני אל נתיב שמאלי','שטח ההפרדה מהווה מחסום בין כיווני הנסיעה']
+                rules: ['לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות','בכביש עם שטח הפרדה: פנה מנתיב ימני אל נתיב שמאלי','שטח ההפרדה מהווה מחסום בין כיווני הנסיעה']
             }
         ];
 
@@ -923,43 +930,40 @@
                 const dirs = Object.keys(activePaths[drivingCar.name] || {});
                 if (dirs.length === 0) return;
 
-                // Endpoint-distance path selection: pick the path whose destination
-                // circle (t=1 endpoint) is closest to the pointer.
-                // This lets the player aim at the circle they want — works for
-                // direction choice (straight/left/right) AND lane choice (left vs
-                // left_wrong, which share the same early trajectory and cannot be
-                // distinguished by path-proximity alone).
+                // Angle-based path selection: use drag direction from start point to
+                // current pointer to pick the best-matching path (same as keyboard logic).
+                const dx = pointer.x - dragStartX;
+                const dy = pointer.y - dragStartY;
+                if (Math.sqrt(dx*dx + dy*dy) < 15) return; // not enough drag
+
                 let chosenDir = dirs[0];
                 if (dirs.length > 1) {
                     // Once the car is 40%+ along a path, commit — don't switch
                     if (drivingT > 0.4 && drivingDir) {
                         chosenDir = drivingDir;
                     } else {
-                        let minDist = Infinity;
-                        dirs.forEach(dir => {
-                            const p = activePaths[drivingCar.name][dir];
-                            if (!p) return;
-                            const endPt = p.getPoint(1);
-                            const d = Phaser.Math.Distance.Between(pointer.x, pointer.y, endPt.x, endPt.y);
-                            if (d < minDist) { minDist = d; chosenDir = dir; }
-                        });
-                        // Hysteresis: require new endpoint to be clearly closer (25px)
-                        // before switching — prevents rapid flickering in ambiguous zones
-                        if (drivingDir && chosenDir !== drivingDir) {
-                            const curPath = activePaths[drivingCar.name][drivingDir];
-                            if (curPath) {
-                                const curEndPt = curPath.getPoint(1);
-                                const curDist  = Phaser.Math.Distance.Between(pointer.x, pointer.y, curEndPt.x, curEndPt.y);
-                                if (minDist > curDist - 25) chosenDir = drivingDir; // not clearly closer — keep current
+                        // If paths only differ by _wrong suffix (same base direction, different lanes),
+                        // use endpoint-distance so player aims at a specific flag.
+                        // Otherwise use angle-based selection (better for distinct directions).
+                        const baseDir = d => d.replace('_wrong', '');
+                        const allSameBase = dirs.every(d => baseDir(d) === baseDir(dirs[0]));
+                        if (allSameBase) {
+                            // endpoint-distance: pick path whose endpoint is closest to pointer
+                            let best = dirs[0], bestDist = Infinity;
+                            for (const d of dirs) {
+                                const p = activePaths[drivingCar.name][d];
+                                const ep = p.getPoint(1);
+                                const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, ep.x, ep.y);
+                                if (dist < bestDist) { bestDist = dist; best = d; }
                             }
+                            chosenDir = best;
+                        } else {
+                            const dragAngle = Math.atan2(dy, dx);
+                            const newDir = pickDirByWorldAngle(drivingCar.name, dragAngle, dirs);
+                            chosenDir = newDir || drivingDir || dirs[0];
                         }
                     }
                 }
-
-                // Require a minimum drag distance before locking a path
-                // (avoids immediate path selection on tap-without-drag)
-                const totalDist = Phaser.Math.Distance.Between(dragStartX, dragStartY, pointer.x, pointer.y);
-                if (totalDist < 15 && !drivingPath) return;
 
                 if (chosenDir !== drivingDir) {
                     const newPath = activePaths[drivingCar.name][chosenDir];
@@ -981,7 +985,8 @@
                             drivingCar.x = snap.x;
                             drivingCar.y = snap.y;
                             const tang = drivingPath.getTangent(t);
-                            drivingCar.rotation = tang.angle() + Math.PI / 2;
+                            const targetAngle = tang.angle() + Math.PI / 2;
+                            drivingCar.rotation = Phaser.Math.Angle.RotateTo(drivingCar.rotation, targetAngle, 0.15);
                             drivingT = t;
                             drivingCar.pathFollower.t = t;
                             if (t >= 0.9) {        // reached destination
@@ -1112,7 +1117,8 @@
             drivingCar.x = pt.x;
             drivingCar.y = pt.y;
             const tang = drivingPath.getTangent(drivingT);
-            drivingCar.rotation = tang.angle() + Math.PI / 2;
+            const targetAngle = tang.angle() + Math.PI / 2;
+            drivingCar.rotation = Phaser.Math.Angle.RotateTo(drivingCar.rotation, targetAngle, 0.15);
             drivingCar.pathFollower.t = drivingT;
 
             if (drivingT >= 0.9) {
@@ -1282,7 +1288,8 @@
             } else {
                 instruction = phaseATexts[step] || `סמנו את המכונית מספר ${step + 1} שבצומת`;
             }
-            document.getElementById('ui-instructions').innerText = instruction;
+            // (instruction text is kept here for reference but ui-instructions is set
+            //  once in initLevel from levelData.instruction and stays there throughout)
 
             // Re-enable all remaining (non-driven) cars
             levelData.cars.forEach(cd => {
@@ -1328,8 +1335,6 @@
             drivingKey   = null;
             isDraggingB  = false;
             car.pathFollower.t = 0;
-
-            document.getElementById('ui-instructions').innerText = 'הסיעו את המכונית לנקודת היעד שלה במסלול המדויק';
 
             const levelData = LEVELS[currentLevelIndex];
             levelData.cars.forEach(cd => {
@@ -1567,7 +1572,16 @@
             const rules = levelData.rules && levelData.rules.length > 0
                 ? levelData.rules
                 : ['[חוקי עזר יצורפו בקרוב]'];
-            document.getElementById('rules-list').innerHTML = rules.map(r => `<li>${r}</li>`).join('');
+            const introEl = document.getElementById('rules-intro');
+            const listEl  = document.getElementById('rules-list');
+            if (rules.length > 1) {
+                introEl.textContent = rules[0];
+                introEl.style.display = 'block';
+                listEl.innerHTML = rules.slice(1).map(r => `<li>${r}</li>`).join('');
+            } else {
+                introEl.style.display = 'none';
+                listEl.innerHTML = rules.map(r => `<li>${r}</li>`).join('');
+            }
             document.getElementById('rules-modal').classList.add('show');
         }
         function closeRulesModal() {
