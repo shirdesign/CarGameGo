@@ -1061,19 +1061,22 @@
             // (חץ למעלה = תנועה למעלה תמיד, ללא קשר לכיוון הרכב)
             const worldAngles = {
                 'ArrowUp':    -Math.PI / 2,
+                'ArrowDown':   Math.PI / 2,
                 'ArrowLeft':   Math.PI,
                 'ArrowRight':  0,
             };
             const arrowAngle = worldAngles[key];
             if (arrowAngle === undefined) return;
 
+            // Exclude _wrong paths from keyboard selection — they are only for drag/destination markers
+            const keyboardDirs = dirs.filter(d => !d.endsWith('_wrong'));
+            if (keyboardDirs.length === 0) return;
+
             let chosen;
-            if (dirs.length === 1) {
-                chosen = dirs[0];
+            if (keyboardDirs.length === 1) {
+                chosen = keyboardDirs[0];
             } else {
-                // Always use world-angle to pick path — works for both distinct directions
-                // (straight/left/right) and same-base lane choices (left vs left_wrong).
-                chosen = pickDirByWorldAngle(drivingCar.name, arrowAngle, dirs);
+                chosen = pickDirByWorldAngle(drivingCar.name, arrowAngle, keyboardDirs);
             }
 
             if (!chosen) return;
