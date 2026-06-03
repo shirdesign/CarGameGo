@@ -928,8 +928,6 @@
 
             this.input.on('pointermove', (pointer) => {
                 if (currentPhase !== 'drive' || !isDraggingB || !drivingCar || !pointer.isDown) return;
-                // Direction must be set by arrow key first — drag alone cannot start
-                if (!drivingDir || !drivingPath) return;
 
                 const dx = pointer.x - dragStartX;
                 const dy = pointer.y - dragStartY;
@@ -937,16 +935,28 @@
                 if (totalDist < 10) return;
 
                 const dirs = Object.keys(activePaths[drivingCar.name] || {});
+                if (dirs.length === 0) return;
 
-                // Mid-drag direction switch: if drag angle diverges significantly from
-                // current path AND we haven't passed the point of no return, switch paths.
-                if (dirs.length > 1 && drivingT < 0.55) {
-                    const dragAngle = Math.atan2(dy, dx);
+                const dragAngle = Math.atan2(dy, dx);
+
+                if (!drivingDir) {
+                    // No direction yet — pick by drag angle (initial selection)
+                    const chosen = dirs.length === 1
+                        ? dirs[0]
+                        : pickDirByWorldAngle(drivingCar.name, dragAngle, dirs);
+                    if (!chosen) return;
+                    drivingPath   = activePaths[drivingCar.name][chosen];
+                    drivingDir    = chosen;
+                    drivingT      = 0;
+                    dragBaseT     = 0;
+                    pathStartDist = totalDist;
+                } else if (dirs.length > 1 && drivingT < 0.55) {
+                    // Already on a path — check if drag diverges enough to switch
                     const tang0 = drivingPath.getTangent(Math.max(0.01, drivingT));
                     let diff = Math.abs(dragAngle - tang0.angle());
                     if (diff > Math.PI) diff = 2 * Math.PI - diff;
 
-                    if (diff > 1.1) { // ~63° divergence — intentional direction change
+                    if (diff > 1.1) { // ~63° — intentional direction change
                         const newDir = pickDirByWorldAngle(drivingCar.name, dragAngle, dirs);
                         if (newDir && newDir !== drivingDir) {
                             const newPath = activePaths[drivingCar.name][newDir];
@@ -961,7 +971,9 @@
                     }
                 }
 
-                // Advance t by how far user dragged since this drag session started
+                if (!drivingPath) return;
+
+                // Advance t by drag distance since this path was chosen
                 const progressDist = Math.max(0, totalDist - pathStartDist);
                 const pathLen      = drivingPath.getLength();
                 const proposedT    = Math.min(dragBaseT + progressDist / pathLen, 1.0);
@@ -1221,12 +1233,13 @@
                 if (currentPhase === 'select') {
                     handleCarClick(car);
                 } else if (currentPhase === 'drive' && car === drivingCar) {
-                    if (!drivingDir) return; // arrow must set direction first
                     isDraggingB   = true;
                     dragStartX    = pointer.x;
                     dragStartY    = pointer.y;
                     dragBaseT     = drivingT;  // continue from current position
                     pathStartDist = 0;
+                    // Note: drivingDir/drivingPath may already be set by arrow key,
+                    // or will be chosen on first pointermove by drag angle.
                 }
             });
 
