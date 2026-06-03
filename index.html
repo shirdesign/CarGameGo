@@ -416,10 +416,23 @@
             .car-success-sub { font-size: 13px; }
 
             /* פופ-אפ הצלחת שלב */
-            .level-success-box { padding: 12px 16px; gap: 8px; }
-            .level-success-title { font-size: 22px; }
-            .level-success-text { font-size: 13px; padding: 8px 10px; line-height: 1.5; }
-            #level-success-img { max-height: 100px; }
+            .level-success-box {
+                padding: 10px 14px; gap: 6px;
+                flex-direction: row; flex-wrap: wrap; align-items: flex-start;
+                max-width: 600px;
+            }
+            .level-success-badge, .level-success-title {
+                flex: 1 1 100%;
+            }
+            .level-success-title { font-size: 20px; }
+            .level-success-text { font-size: 12px; padding: 6px 8px; line-height: 1.4; flex: 1 1 100%; }
+            /* תמונה וכפתורים זה לצד זה */
+            #level-success-img { max-height: 120px; width: auto; flex: 0 0 auto; }
+            .level-success-btns {
+                flex: 1 1 120px; flex-direction: column; gap: 6px;
+                align-self: center;
+            }
+            .level-success-btns .btn { font-size: 12px; padding: 8px 10px; }
         }
 
         /* טאבלט בינוני — הקטן קצת */
@@ -1862,8 +1875,12 @@
         }
         function retryCurrentCar() {
             document.getElementById('police-screen').classList.remove('show');
+            // If any car has already moved, restart the whole level from scratch
+            if (movedCars.size > 0) {
+                setTimeout(initLevel, 150);
+                return;
+            }
             startTimer();
-            // Preserve progress of already-moved cars — only reset the remaining ones
             currentPhase = 'select';
             drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0;
             drivingKey = null;
@@ -1878,7 +1895,6 @@
                     car.setInteractive({ cursor: 'pointer', useHandCursor: true });
                 }
             });
-            // Small delay prevents click-through to Phaser canvas behind the police screen
             setTimeout(startPhaseSelect, 150);
         }
         function showRulesFromPolice() {
