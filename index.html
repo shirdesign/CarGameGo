@@ -989,8 +989,14 @@
         let drivingT    = 0;
         let drivingKey  = null;  // מקש החץ שבחר את המסלול הנוכחי
         let isDraggingB    = false;
-        let pathStartDist  = 0; // total drag distance when current path was selected
-        let dragBaseT      = 0; // drivingT at moment drag session started
+        let pathStartDist  = 0;
+        let dragBaseT      = 0;
+
+        // Lane-fork state (levels with left/left_wrong choices)
+        let waitingForLane = false;  // car paused at fork, waiting for ↑/↓
+        let laneOptions    = null;   // { up: {dir,path}, down: {dir,path} }
+        let carLaneOptions = {};     // precomputed per car: { carId: laneOptions }
+        let forkUI         = [];     // Phaser display objects to clear after choice
 
         // נהיגה במקלדת
         const keysHeld = new Set();
@@ -1152,6 +1158,92 @@
         }
 
         // ==========================================
+        //   LANE FORK — helpers
+        // ==========================================
+
+        // Find t where two paths diverge beyond threshold pixels
+        function computeForkT(pathA, pathB, threshold) {
+            threshold = threshold || 35;
+            for (let t = 0; t <= 1; t += 0.02) {
+                try {
+                    const a = pathA.getPoint(t);
+                    const b = pathB.getPoint(t);
+                    if (!a || !b) continue;
+                    if (Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y) > threshold) {
+                        return Math.max(0, t - 0.02);
+                    }
+                } catch(e) {}
+            }
+            return 0.45;
+        }
+
+        // Build lane fork data for a car (if it has left/left_wrong style paths)
+        function buildCarLaneData(carId) {
+            const paths = activePaths[carId];
+            if (!paths) return null;
+            const dirs = Object.keys(paths);
+            // Find a base direction that has a _wrong variant
+            for (const d of dirs) {
+                const wrong = d + '_wrong';
+                if (dirs.includes(wrong)) {
+                    const epBase  = paths[d].getPoint(1);
+                    const epWrong = paths[wrong].getPoint(1);
+                    if (!epBase || !epWrong) continue;
+                    // Assign ↑ to whichever endpoint is higher on screen (lower Y)
+                    const upDir   = epBase.y <= epWrong.y ? d     : wrong;
+                    const downDir = epBase.y <= epWrong.y ? wrong : d;
+                    return {
+                        up:    { dir: upDir,   path: paths[upDir]   },
+                        down:  { dir: downDir, path: paths[downDir] },
+                        forkT: computeForkT(paths[d], paths[wrong])
+                    };
+                }
+            }
+            return null;
+        }
+
+        function showForkUI(lanes) {
+            clearForkUI();
+            const carX = drivingCar.x;
+            const carY = drivingCar.y;
+
+            // Arrow labels pointing toward each destination
+            [
+                { label: '↑', opt: lanes.up   },
+                { label: '↓', opt: lanes.down  },
+            ].forEach(({ label, opt }) => {
+                const ep = opt.path.getPoint(1);
+                if (!ep) return;
+
+                // Line from car toward destination
+                const g = gameScene.add.graphics();
+                g.lineStyle(3, 0xffffff, 0.7);
+                g.beginPath();
+                g.moveTo(carX, carY);
+                // Draw only partway toward endpoint
+                const mx = carX + (ep.x - carX) * 0.35;
+                const my = carY + (ep.y - carY) * 0.35;
+                g.lineTo(mx, my);
+                g.strokePath();
+                g.setDepth(10);
+
+                // Key label near midpoint
+                const tx = gameScene.add.text(mx, my, label, {
+                    fontSize: '28px', fontFamily: 'Arial', color: '#ffffff',
+                    stroke: '#000000', strokeThickness: 4,
+                    backgroundColor: '#00000066', padding: { x: 6, y: 2 }
+                }).setOrigin(0.5).setDepth(11);
+
+                forkUI.push(g, tx);
+            });
+        }
+
+        function clearForkUI() {
+            forkUI.forEach(obj => obj && obj.destroy && obj.destroy());
+            forkUI = [];
+        }
+
+        // ==========================================
         //   נהיגה ידנית במקלדת — שלב ב׳
         // ==========================================
         function handleKeyDown(event) {
@@ -1163,12 +1255,28 @@
             if (isArrow) event.preventDefault();
 
             if (!isArrow || currentPhase !== 'drive' || !drivingCar) return;
+
+            // ── Fork: waiting for ↑/↓ lane choice ──────────────────────────
+            if (waitingForLane && laneOptions) {
+                let chosen = null;
+                if (key === 'ArrowUp')   chosen = laneOptions.up;
+                if (key === 'ArrowDown') chosen = laneOptions.down;
+                if (!chosen) return;
+                // Commit to chosen lane from the fork point
+                drivingPath    = chosen.path;
+                drivingDir     = chosen.dir;
+                // drivingT stays where the car paused
+                drivingKey     = key;
+                waitingForLane = false;
+                laneOptions    = null;
+                clearForkUI();
+                return;
+            }
+
             if (!activePaths[drivingCar.name]) return;
             const dirs = Object.keys(activePaths[drivingCar.name]);
             if (dirs.length === 0) return;
 
-            // Map arrows to world/screen-absolute directions
-            // (חץ למעלה = תנועה למעלה תמיד, ללא קשר לכיוון הרכב)
             const worldAngles = {
                 'ArrowUp':    -Math.PI / 2,
                 'ArrowDown':   Math.PI / 2,
@@ -1178,8 +1286,13 @@
             const arrowAngle = worldAngles[key];
             if (arrowAngle === undefined) return;
 
-            // Exclude _wrong paths from keyboard selection — they are only for drag/destination markers
-            const keyboardDirs = dirs.filter(d => !d.endsWith('_wrong'));
+            // For keyboard: exclude left_wrong-style variants (base path exists),
+            // but keep cross_wrong (no base path exists) so it is reachable.
+            const keyboardDirs = dirs.filter(d => {
+                if (!d.endsWith('_wrong')) return true;
+                const base = d.replace('_wrong', '');
+                return !dirs.includes(base);
+            });
             if (keyboardDirs.length === 0) return;
 
             let chosen;
@@ -1192,7 +1305,6 @@
             if (!chosen) return;
 
             if (chosen !== drivingDir) {
-                // Switch to new path — find closest point to car's current position
                 const newPath = activePaths[drivingCar.name][chosen];
                 const newT = drivingT > 0
                     ? (findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? 0)
@@ -1201,12 +1313,11 @@
                 drivingDir  = chosen;
                 drivingT    = newT;
             } else if (!drivingPath) {
-                // First selection
                 drivingPath = activePaths[drivingCar.name][chosen];
                 drivingDir  = chosen;
                 drivingT    = 0;
             }
-            drivingKey = key;  // מפתח זה מקדם את המכונית ב-update()
+            drivingKey = key;
         }
 
         function handleKeyUp(event) {
@@ -1214,12 +1325,11 @@
         }
 
         function update() {
-            // נהיגה ידנית עם מקלדת — שלב ב׳ בלבד
             if (currentPhase !== 'drive' || !drivingCar || !drivingPath) return;
+            if (waitingForLane) return; // paused at fork — waiting for ↑/↓
 
             if (!drivingKey || !keysHeld.has(drivingKey)) return;
 
-            // ~2 שניות לעבור את כל המסלול בלחיצה רציפה
             drivingT = Math.min(1, drivingT + 0.008);
             const pt = drivingPath.getPoint(drivingT);
             drivingCar.x = pt.x;
@@ -1228,6 +1338,20 @@
             const targetAngle = tang.angle() + Math.PI / 2;
             drivingCar.rotation = Phaser.Math.Angle.RotateTo(drivingCar.rotation, targetAngle, 0.15);
             drivingCar.pathFollower.t = drivingT;
+
+            // Check if car has reached the lane-fork point for this car
+            const lanes = carLaneOptions[drivingCar.name];
+            if (lanes && !waitingForLane && drivingT >= lanes.forkT) {
+                // Only trigger fork if currently on one of the lane-choice paths
+                const onLanePath = (drivingDir === lanes.up.dir || drivingDir === lanes.down.dir);
+                if (onLanePath) {
+                    waitingForLane = true;
+                    laneOptions    = lanes;
+                    drivingKey     = null; // stop advancing
+                    showForkUI(lanes);
+                    return;
+                }
+            }
 
             if (drivingT >= 0.9) {
                 completeDrive();
@@ -1245,6 +1369,8 @@
             drivingCar   = null; drivingPath = null; drivingDir = null; drivingT = 0;
             drivingKey   = null;
             isDraggingB  = false;
+            waitingForLane = false; laneOptions = null; carLaneOptions = {};
+            clearForkUI();
             keysHeld.clear();
 
             window.removeEventListener('keydown', handleKeyDown);
@@ -1287,6 +1413,13 @@
                     }
                     if (path) activePaths[carId][dir] = path;
                 }
+            }
+
+            // Pre-compute lane-fork data for cars that have left/left_wrong pairs
+            carLaneOptions = {};
+            for (const carId in activePaths) {
+                const lanes = buildCarLaneData(carId);
+                if (lanes) carLaneOptions[carId] = lanes;
             }
 
             // Destination circles (correct + wrong destinations both shown — player doesn't know which is right)
@@ -1479,6 +1612,7 @@
                 const carData  = levelData.cars.find(c => c.id === car.name);
                 const wrongDir = drivingDir;
                 drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0; drivingKey = null;
+                waitingForLane = false; laneOptions = null; clearForkUI();
                 car.disableInteractive();
                 gameScene.tweens.add({
                     targets: car, x: car.x + 8,
@@ -1520,6 +1654,7 @@
                     car.disableInteractive();
                     movedCars.add(car.name);
                     drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0; drivingKey = null;
+                waitingForLane = false; laneOptions = null; clearForkUI();
                     const levelData = LEVELS[currentLevelIndex];
                     const isLastCar = movedCars.size >= levelData.solution.length;
                     showCarSuccessPopup(isLastCar);
