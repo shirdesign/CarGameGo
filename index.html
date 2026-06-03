@@ -1125,7 +1125,6 @@
         // ==========================================
         function initLevel() {
             // Reset state
-            document.getElementById('ui-instructions').innerText = '';
             currentPhase = 'select';
             movedCars    = new Set();
             drivingCar   = null; drivingPath = null; drivingDir = null; drivingT = 0;
@@ -1211,6 +1210,7 @@
 
             // Reset UI
             document.getElementById('level-title').innerText = `שאלה מספר ${levelData.id}`;
+            document.getElementById('ui-instructions').innerText = levelData.instruction || '';
             document.getElementById('status-msg').style.display    = 'none';
             document.getElementById('solution-img').style.display  = 'none';
             document.getElementById('buttons-container').style.display = 'none';
