@@ -940,43 +940,43 @@
                 const dragAngle = Math.atan2(dy, dx);
 
                 if (!drivingDir) {
-                    // No direction yet — pick by drag angle (initial selection)
-                    const chosen = dirs.length === 1
-                        ? dirs[0]
-                        : pickDirByWorldAngle(drivingCar.name, dragAngle, dirs);
-                    if (!chosen) return;
-                    drivingPath   = activePaths[drivingCar.name][chosen];
-                    drivingDir    = chosen;
-                    drivingT      = 0;
-                    dragBaseT     = 0;
-                    pathStartDist = totalDist;
+                    // No direction yet — pick the path whose closest point to the pointer is smallest
+                    let bestDir = null, bestDist = Infinity;
+                    for (const d of dirs) {
+                        const p = activePaths[drivingCar.name][d];
+                        const t = findClosestPointOnPath(p, pointer.x, pointer.y) ?? 0;
+                        const pt = p.getPoint(t);
+                        const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, pt.x, pt.y);
+                        if (dist < bestDist) { bestDist = dist; bestDir = d; }
+                    }
+                    if (!bestDir) return;
+                    drivingPath = activePaths[drivingCar.name][bestDir];
+                    drivingDir  = bestDir;
+                    drivingT    = 0;
                 } else if (dirs.length > 1 && drivingT < 0.55) {
-                    // Already on a path — check if drag diverges enough to switch
-                    const tang0 = drivingPath.getTangent(Math.max(0.01, drivingT));
-                    let diff = Math.abs(dragAngle - tang0.angle());
-                    if (diff > Math.PI) diff = 2 * Math.PI - diff;
-
-                    if (diff > 1.1) { // ~63° — intentional direction change
-                        const newDir = pickDirByWorldAngle(drivingCar.name, dragAngle, dirs);
-                        if (newDir && newDir !== drivingDir) {
-                            const newPath = activePaths[drivingCar.name][newDir];
-                            // Continue from closest point — no t=0 reset jump
-                            const newT = findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? drivingT;
-                            drivingPath   = newPath;
-                            drivingDir    = newDir;
-                            drivingT      = newT;
-                            dragBaseT     = newT;
-                            pathStartDist = totalDist;
-                        }
+                    // Already on a path — re-evaluate which path pointer is closest to
+                    let bestDir = drivingDir, bestDist = Infinity;
+                    for (const d of dirs) {
+                        const p = activePaths[drivingCar.name][d];
+                        const t = findClosestPointOnPath(p, pointer.x, pointer.y) ?? 0;
+                        const pt = p.getPoint(t);
+                        const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, pt.x, pt.y);
+                        if (dist < bestDist) { bestDist = dist; bestDir = d; }
+                    }
+                    if (bestDir !== drivingDir) {
+                        drivingPath = activePaths[drivingCar.name][bestDir];
+                        drivingDir  = bestDir;
+                        // Keep current t — don't jump
+                        const newT = findClosestPointOnPath(drivingPath, drivingCar.x, drivingCar.y) ?? drivingT;
+                        drivingT = newT;
                     }
                 }
 
                 if (!drivingPath) return;
 
-                // Advance t by drag distance since this path was chosen
-                const progressDist = Math.max(0, totalDist - pathStartDist);
-                const pathLen      = drivingPath.getLength();
-                const proposedT    = Math.min(dragBaseT + progressDist / pathLen, 1.0);
+                // t = closest point on path to the pointer — car follows the drag
+                const pointerT = findClosestPointOnPath(drivingPath, pointer.x, pointer.y) ?? drivingT;
+                const proposedT = Math.min(Math.max(pointerT, drivingT), 1.0); // never go backwards
 
                 if (proposedT > drivingT) {
                     drivingT = proposedT;
@@ -984,7 +984,6 @@
                     const pt = drivingPath.getPoint(drivingT);
                     drivingCar.x = pt.x;
                     drivingCar.y = pt.y;
-                    // Snap rotation directly to tangent — no lag in drag
                     const tang = drivingPath.getTangent(drivingT);
                     drivingCar.rotation = tang.angle() + Math.PI / 2;
                     if (drivingT >= 0.9) {
