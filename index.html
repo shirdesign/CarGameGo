@@ -939,36 +939,40 @@
 
                 const dragAngle = Math.atan2(dy, dx);
 
+                // Determine if all available paths share the same base direction (lane choice)
+                const baseDir = d => d.replace('_wrong', '');
+                const isLaneChoice = dirs.length > 1 && dirs.every(d => baseDir(d) === baseDir(dirs[0]));
+
+                function pickBestDir() {
+                    if (dirs.length === 1) return dirs[0];
+                    if (isLaneChoice) {
+                        // Lane choice: pick by endpoint proximity — drag toward the destination you want
+                        let best = dirs[0], bestDist = Infinity;
+                        for (const d of dirs) {
+                            const ep = activePaths[drivingCar.name][d].getPoint(1);
+                            const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, ep.x, ep.y);
+                            if (dist < bestDist) { bestDist = dist; best = d; }
+                        }
+                        return best;
+                    } else {
+                        // Distinct directions: pick by drag angle
+                        return pickDirByWorldAngle(drivingCar.name, dragAngle, dirs) || dirs[0];
+                    }
+                }
+
                 if (!drivingDir) {
-                    // No direction yet — pick the path whose closest point to the pointer is smallest
-                    let bestDir = null, bestDist = Infinity;
-                    for (const d of dirs) {
-                        const p = activePaths[drivingCar.name][d];
-                        const t = findClosestPointOnPath(p, pointer.x, pointer.y) ?? 0;
-                        const pt = p.getPoint(t);
-                        const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, pt.x, pt.y);
-                        if (dist < bestDist) { bestDist = dist; bestDir = d; }
-                    }
-                    if (!bestDir) return;
-                    drivingPath = activePaths[drivingCar.name][bestDir];
-                    drivingDir  = bestDir;
+                    const chosen = pickBestDir();
+                    drivingPath = activePaths[drivingCar.name][chosen];
+                    drivingDir  = chosen;
                     drivingT    = 0;
-                } else if (dirs.length > 1 && drivingT < 0.55) {
-                    // Already on a path — re-evaluate which path pointer is closest to
-                    let bestDir = drivingDir, bestDist = Infinity;
-                    for (const d of dirs) {
-                        const p = activePaths[drivingCar.name][d];
-                        const t = findClosestPointOnPath(p, pointer.x, pointer.y) ?? 0;
-                        const pt = p.getPoint(t);
-                        const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, pt.x, pt.y);
-                        if (dist < bestDist) { bestDist = dist; bestDir = d; }
-                    }
-                    if (bestDir !== drivingDir) {
-                        drivingPath = activePaths[drivingCar.name][bestDir];
-                        drivingDir  = bestDir;
-                        // Keep current t — don't jump
-                        const newT = findClosestPointOnPath(drivingPath, drivingCar.x, drivingCar.y) ?? drivingT;
-                        drivingT = newT;
+                } else if (dirs.length > 1 && drivingT < 0.7) {
+                    const newDir = pickBestDir();
+                    if (newDir !== drivingDir) {
+                        const newPath = activePaths[drivingCar.name][newDir];
+                        const newT = findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? drivingT;
+                        drivingPath = newPath;
+                        drivingDir  = newDir;
+                        drivingT    = newT;
                     }
                 }
 
