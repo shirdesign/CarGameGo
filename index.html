@@ -67,7 +67,8 @@
         /* --- כביש ואנימציית כותרת --- */
         .intro-road-wrap {
             width: 100%; overflow: hidden; border-radius: 12px;
-            background: #2b2b2b; padding: 10px 0; position: relative;
+            background: #2b2b2b; padding: 10px 12px; position: relative;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         /* פסי הכביש הנעים */
         .intro-road-wrap::before {
@@ -110,6 +111,13 @@
         .intro-partner-logo { width: 130px; max-width: 40%; height: auto; display: block; margin: 0 auto; opacity: 0.92; }
         #intro-text { text-align: right; width: 100%; color: #444; font-size: 15px; line-height: 1.7; }
         #intro-text .placeholder { color: #999; font-style: italic; font-size: 13px; border: 1px dashed #ddd; padding: 10px; border-radius: 8px; margin-top: 6px; }
+        .intro-subtitle { font-size: 14px; color: #666; text-align: center; line-height: 1.6; margin: 0; }
+        .intro-car-icon { width: 36px; height: auto; flex-shrink: 0; transform: scaleX(-1); }
+        .intro-dest-dot {
+            width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+            border: 3px solid #F26D5C; background: rgba(242,109,92,0.3);
+        }
+        .bubble-body { font-size: 14px; color: #555; line-height: 1.7; text-align: right; width: 100%; }
 
         /* --- Pre-question bubble --- */
         #question-bubble {
@@ -287,25 +295,35 @@
         #police-screen.show { display: flex; }
         .police-box {
             background: #fff; border-radius: 20px;
-            padding: 36px 32px 28px; text-align: center; max-width: 340px; width: 90%;
+            padding: 24px 24px 20px; max-width: 480px; width: 92%;
             max-height: 90dvh; overflow-y: auto;
             box-shadow: 0 16px 50px rgba(0,0,0,0.40);
             border-top: 6px solid #F26D5C;
-            display: flex; flex-direction: column; gap: 12px;
+            display: flex; flex-direction: row-reverse; gap: 20px; align-items: flex-start;
             animation: bubble-in 0.3s ease;
         }
-        .police-box h2 { color: #F26D5C; margin: 0; font-size: 26px; }
-        .police-box p  { color: #555; margin: 0; font-size: 16px; line-height: 1.4; }
+        .police-officer-img {
+            width: 130px; height: auto; flex-shrink: 0;
+            border-radius: 10px; object-fit: cover; align-self: flex-start;
+        }
+        .police-content {
+            display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0;
+        }
+        .police-content h2 { color: #F26D5C; margin: 0; font-size: 24px; }
+        .police-subtitle { color: #333; font-size: 15px; font-weight: bold; margin: 0; }
+        .police-content #police-error-text { color: #555; margin: 0; font-size: 14px; line-height: 1.4; }
+        .police-helper-text { font-size: 13px; color: #888; line-height: 1.5; border-top: 1px solid #f0f0f0; padding-top: 8px; margin: 0; }
         @media (max-height: 520px) {
             .police-box {
-                padding: 12px 20px 12px; gap: 6px; border-radius: 14px;
-                flex-direction: row; flex-wrap: wrap; align-items: center;
-                max-width: 520px;
+                padding: 10px 14px; gap: 10px; border-radius: 14px;
+                max-width: 560px; align-items: center;
             }
-            .police-box img { width: 60px !important; height: 60px !important; }
-            .police-box h2 { font-size: 18px; }
-            .police-box p  { font-size: 13px; flex: 1 1 100%; }
-            .police-box .btn { font-size: 12px; padding: 7px 10px; flex: 1 1 45%; }
+            .police-officer-img { width: 60px; border-radius: 50%; }
+            .police-content h2 { font-size: 16px; }
+            .police-subtitle { font-size: 12px; }
+            .police-content #police-error-text { font-size: 12px; }
+            .police-helper-text { display: none; }
+            .police-content .btn { font-size: 12px; padding: 7px 10px; }
         }
 
         /* --- Car success popup (brief auto-close) --- */
@@ -506,29 +524,24 @@
         <div class="intro-box">
             <div class="intro-logo"><img src="images/logo-al-hahaga.png" alt="על ההגה" style="width:120px; transform:none;"></div>
             <div class="intro-road-wrap">
-                <span class="intro-road-title">משחק הצמתים</span>
+                <img src="images/red.png" class="intro-car-icon" alt="">
+                <span class="intro-road-title">מי נכנס ראשון?!</span>
+                <div class="intro-dest-dot"></div>
             </div>
-            <div id="intro-text">
-                <p style="text-align:center;"><strong>ברוכים הבאים למשחק הצמתים!</strong></p>
-
-            </div>
+            <p class="intro-subtitle">למדתם הכל על פניות וזכות קדימה,<br>הגיע הזמן לראות מה אתם יודעים</p>
             <div class="how-to-panel" style="width:100%; margin:0;">
-                <strong>✏️ איך משחקים?</strong>
-                <div>שלב א׳ — בחרו את הרכב שיש לו זכות קדימה</div>
-                <div>שלב ב׳ — גררו אותו לנקודת היעד שלו</div>
-                <div>⌨️ מקלדת: חצים לפי כיוון המפה</div>
-                <div class="swipe-demo">
-                    <span class="swipe-hand">👆</span>
-                    <span style="font-size:13px; color:#999; margin-right:8px;">← גרירה</span>
-                </div>
+                <strong>איך משחקים?</strong>
+                <div>שלב א׳ — בוחרים את הרכב שתורו לסוע, לפי זכויות הקדימה</div>
+                <div>שלב ב׳ — כוונו או גררו את הרכב לנקודת היעד שלו, המסומנת בצבע הרכב</div>
+                <div style="color:#888; font-size:12px; margin-top:4px;">כוונו — חצים במקלדת &nbsp;|&nbsp; גררו — עם היד על המסך</div>
             </div>
-            <button class="btn btn-primary" style="width:200px; font-size:18px; margin-top:4px;" onclick="closeIntro()">התחל לשחק ◀</button>
+            <button class="btn btn-primary" style="width:220px; font-size:15px; margin-top:4px; line-height:1.5;" onclick="closeIntro()">חושבים שאתם מוכנים?!<br>התחילו לשחק!</button>
         </div>
     </div>
 
     <!-- מסך סיום -->
     <div id="end-screen">
-        <h1>🎉 כל הכבוד!</h1>
+        <h1>כל הכבוד!</h1>
         <p>הגעת לסוף המסלול!</p>
         <p style="font-size:17px; color:#ccc;">סיימת את כל השלבים בהצלחה</p>
         <button class="btn btn-primary" style="width:220px; margin-top:20px; font-size:20px;" onclick="restartGame()">שחק שוב מההתחלה</button>
@@ -537,28 +550,31 @@
     <!-- מסך שוטר -->
     <div id="police-screen">
         <div class="police-box">
-            <img src="images/police-officer.png" alt="שוטר" style="width:120px; height:120px; object-fit:cover; border-radius:50%; align-self:center;">
-            <h2>עצור!</h2>
-            <p id="police-error-text">בחרת את הרכב הלא נכון. בדקו את חוקי הקדימה ונסו שוב.</p>
-            <button class="btn btn-rules" onclick="showRulesFromPolice()">📖 חוקי עזר</button>
-            <button class="btn btn-primary" onclick="retryCurrentCar()" style="pointer-events:auto;">🔄 נסה שוב</button>
+            <img src="images/police-officer2.png" alt="שוטר" class="police-officer-img">
+            <div class="police-content">
+                <h2>עצרו בצד!</h2>
+                <p class="police-subtitle">עברתם על החוק</p>
+                <p id="police-error-text"></p>
+                <button class="btn btn-primary" onclick="retryCurrentCar()" style="pointer-events:auto;">נסו שוב</button>
+                <button class="btn btn-rules" onclick="showRulesFromPolice()">חוקי עזר</button>
+                <p class="police-helper-text">רוצים לחשב את הפתרון לפני שאתם מנסים שנית? עברו שוב על חוקי העזר ודייקו את תשובתכם</p>
+            </div>
         </div>
     </div>
 
     <!-- בועת שאלה -->
     <div id="question-bubble" onclick="closeQuestionBubble()">
         <div class="bubble-box" onclick="event.stopPropagation()">
-            <div class="bubble-level-badge" id="bubble-level-badge">שאלה 1</div>
+            <div class="bubble-level-badge" id="bubble-level-badge">תרחיש מס' 1</div>
             <div class="bubble-text" id="bubble-text"></div>
-            <div class="bubble-hint">לפרטים נוספים — קראו את הפאנל הימני 👉</div>
-            <button class="btn btn-primary" style="width:180px; margin-top:4px;" onclick="closeQuestionBubble()">בואו נתחיל! ◀</button>
+            <div class="bubble-body" id="bubble-body"></div>
+            <button class="btn btn-primary" style="width:180px; margin-top:4px;" onclick="closeQuestionBubble()">בואו נתחיל!</button>
         </div>
     </div>
 
     <!-- פופאפ הצלחת רכב בודד (מצוין!) -->
     <div id="car-success-popup">
         <div class="car-success-box">
-            <div class="car-success-icon">🎯</div>
             <div class="car-success-title">מצוין!</div>
             <div class="car-success-sub" id="car-success-sub">ממשיכים לרכב הבא...</div>
         </div>
@@ -567,13 +583,13 @@
     <!-- פופאפ סיום שלב -->
     <div id="level-success-popup">
         <div class="level-success-box">
-            <div class="level-success-badge" id="level-success-badge">שאלה 1</div>
-            <div class="level-success-title">✅ כל הכבוד!</div>
+            <div class="level-success-badge" id="level-success-badge">תרחיש מס' 1</div>
+            <div class="level-success-title">כל הכבוד!</div>
             <div class="level-success-text" id="level-success-text"></div>
             <img id="level-success-img" alt="Solution">
             <div class="level-success-btns">
-                <button class="btn btn-secondary" onclick="closeLevelSuccessAndRetry()">🔄 נסה שוב</button>
-                <button class="btn btn-primary" id="level-success-next-btn" onclick="closeLevelSuccessAndNext()">לשאלה הבאה ←</button>
+                <button class="btn btn-secondary" onclick="closeLevelSuccessAndRetry()">נסו שוב</button>
+                <button class="btn btn-primary" id="level-success-next-btn" onclick="closeLevelSuccessAndNext()">לתרחיש הבא</button>
             </div>
         </div>
     </div>
@@ -582,7 +598,7 @@
     <div id="rules-modal" onclick="closeRulesModal()">
         <div class="modal-box" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h2 style="margin:0; font-size:20px;">📖 חוקי עזר</h2>
+                <h2 style="margin:0; font-size:20px;">חוקי עזר</h2>
                 <button class="close-btn" onclick="closeRulesModal()">✕</button>
             </div>
             <p id="rules-intro" style="font-size:14px; color:#888; font-style:italic; margin:0 0 12px 0; line-height:1.5; display:none;"></p>
@@ -608,27 +624,17 @@
                     <div id="timer-progress-bg"><div id="timer-progress-fill"></div></div>
                 </div>
                 <div class="content">
-                    <div class="how-to-panel">
-                        <strong>✏️ איך משחקים?</strong>
-                        <div>שלב א׳ — בחרו את הרכב שיש לו זכות קדימה</div>
-                        <div>שלב ב׳ — גררו אותו לנקודת היעד שלו</div>
-                        <div>⌨️ מקלדת: חצים לפי כיוון המפה</div>
-                        <div class="swipe-demo">
-                            <span class="swipe-hand">👆</span>
-                            <span style="font-size:12px; color:#bbb; margin-right:6px;">← גרירה</span>
-                        </div>
-                    </div>
                     <p id="ui-instructions">טוען...</p>
 
-                    <button class="btn btn-rules" onclick="showRulesModal()">📖 חוקי עזר</button>
+                    <button class="btn btn-rules" onclick="showRulesModal()">חוקי עזר</button>
 
                     <div id="status-msg" class="status-box"></div>
                     <!-- ב-Inspect: אחרי סיום שלב בדקי ב-#solution-img את ה־src לראות איזו תמונת פתרון מוצגת -->
                     <img id="solution-img" alt="Solution">
 
                     <div id="buttons-container">
-                        <button class="btn btn-secondary" id="retry-btn" onclick="initLevel()">🔄 נסה שוב</button>
-                        <button class="btn btn-primary"   id="next-btn"  onclick="nextLevel()">לשאלה הבאה ←</button>
+                        <button class="btn btn-secondary" id="retry-btn" onclick="initLevel()">נסו שוב</button>
+                        <button class="btn btn-primary"   id="next-btn"  onclick="nextLevel()">לתרחיש הבא</button>
                     </div>
                 </div>
             </div>
@@ -663,8 +669,8 @@
         const DEFAULT_LEVELS = [
             {
                 id: 1,
-                instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
-                errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                instruction: "מי נכנס ראשון לצומת, ומי האחרון??\nבחרו את הרכבים הנכונים לנסיעה לפי הסדר בה מגיעה להם זכות הקדימה, כל פעם רכב אחד לפי התור!\nלא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות.\nשימו לב למאפייני הכביש והצומת!",
+                errorText: "נכנסתם לצומת בסדר הלא נכון! נסו שוב, הפעם לפי סדר זכות הקדימה.",
                 solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, נותן זכות קדימה לרכב הבא ממול ולרכב הבא מימין. הרכב הכחול נותן זכות קדימה לבא מימין. ולכן הרכב האדום נכנס ראשון לצומת",
                 bgImage: "images/background1.png",
                 solutionImage: "images/solution1.png",
@@ -698,13 +704,14 @@
                     { color: 'blue', direction: 'straight' },
                     { color: 'yellow', direction: 'left' }
                 ],
-                bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
+                bubbleText: 'אז מי נכנס ראשון, ומי אחרון?!',
+                bubbleBody: 'כוונו או גררו את כל המכוניות אל היעד שלהן, בסדר הנכון לפי זכות הקדימה!\nחוקי העזר הרלוונטיים מחכים לכם פה בצד ימין.\nשימו לב, אתם על זמן!',
                 rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 2,
-                instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
-                errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                instruction: "מי נכנס ראשון לצומת, ומי האחרון??\nבחרו את הרכבים הנכונים לנסיעה לפי הסדר בה מגיעה להם זכות הקדימה, כל פעם רכב אחד לפי התור!\nלא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות.\nשימו לב למאפייני הכביש והצומת!",
+                errorText: "נכנסתם לצומת בסדר הלא נכון! נסו שוב, הפעם לפי סדר זכות הקדימה.",
                 solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, נותן זכות קדימה לרכב הבא ממול ולרכב הבא מימין. הרכב הכחול נותן זכות קדימה לבא מימין. ולכן הרכב האדום נכנס ראשון לצומת",
                 bgImage: "images/background2.png",
                 solutionImage: "images/solution2.png",
@@ -738,13 +745,14 @@
                     { color: 'blue', direction: 'straight' },
                     { color: 'yellow', direction: 'left' }
                 ],
-                bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
+                bubbleText: 'אז מי נכנס ראשון, ומי אחרון?!',
+                bubbleBody: 'כוונו או גררו את כל המכוניות אל היעד שלהן, בסדר הנכון לפי זכות הקדימה!\nחוקי העזר הרלוונטיים מחכים לכם פה בצד ימין.\nשימו לב, אתם על זמן!',
                 rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 3,
-                instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
-                errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                instruction: "מי נכנס ראשון לצומת, ומי האחרון??\nבחרו את הרכבים הנכונים לנסיעה לפי הסדר בה מגיעה להם זכות הקדימה, כל פעם רכב אחד לפי התור!\nלא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות.\nשימו לב למאפייני הכביש והצומת!",
+                errorText: "נכנסתם לצומת בסדר הלא נכון! נסו שוב, הפעם לפי סדר זכות הקדימה.",
                 solutionText: "נכון מאוד! המשאית, המעוניינת לסוע ישר, צריכה לתת זכות קדימה לרכב הבא מימין. ולכן הרכב הכחול נכנס ראשון לצומת",
                 bgImage: "images/background3.png",
                 solutionImage: "images/solution3.png",
@@ -778,13 +786,14 @@
                     { color: 'red', direction: 'straight' },
                     { color: 'yellow', direction: 'straight' }
                 ],
-                bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
+                bubbleText: 'אז מי נכנס ראשון, ומי אחרון?!',
+                bubbleBody: 'כוונו או גררו את כל המכוניות אל היעד שלהן, בסדר הנכון לפי זכות הקדימה!\nחוקי העזר הרלוונטיים מחכים לכם פה בצד ימין.\nשימו לב, אתם על זמן!',
                 rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 4,
-                instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
-                errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                instruction: "מי נכנס ראשון לצומת, ומי האחרון??\nבחרו את הרכבים הנכונים לנסיעה לפי הסדר בה מגיעה להם זכות הקדימה, כל פעם רכב אחד לפי התור!\nלא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות.\nשימו לב למאפייני הכביש והצומת!",
+                errorText: "נכנסתם לצומת בסדר הלא נכון! נסו שוב, הפעם לפי סדר זכות הקדימה.",
                 solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, צריך לתת זכות קדימה לרכב הבא מימין. לכן הרכב הכחול נכנס ראשון לצומת",
                 bgImage: "images/background4.png",
                 solutionImage: "images/solution4.png",
@@ -818,13 +827,14 @@
                     { color: 'yellow', direction: 'left' },
                     { color: 'red', direction: 'straight' }
                 ],
-                bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
+                bubbleText: 'אז מי נכנס ראשון, ומי אחרון?!',
+                bubbleBody: 'כוונו או גררו את כל המכוניות אל היעד שלהן, בסדר הנכון לפי זכות הקדימה!\nחוקי העזר הרלוונטיים מחכים לכם פה בצד ימין.\nשימו לב, אתם על זמן!',
                 rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 5,
-                instruction: "מי נכנס ראשון לצומת, ומי האחרון?? לפניך 3 רכבים שרוצים לפנות בצומת. לכל אחד נקודת יעד משלו בצבע הרכב שלו. עליך להעביר את כל הרכבים את הצומת לפי סדר ההגעה שלהם אל נקודות היעד. יש לך דקה להעביר את כולם, לפי הסדר הנכון בלי טעות אחת ובלי תאונות! נסיעה טובה!",
-                errorText: "בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בסדר הנכון.",
+                instruction: "מי נכנס ראשון לצומת, ומי האחרון??\nבחרו את הרכבים הנכונים לנסיעה לפי הסדר בה מגיעה להם זכות הקדימה, כל פעם רכב אחד לפי התור!\nלא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות.\nשימו לב למאפייני הכביש והצומת!",
+                errorText: "נכנסתם לצומת בסדר הלא נכון! נסו שוב, הפעם לפי סדר זכות הקדימה.",
                 solutionText: "נכון מאוד! לרכב האדום יש תמרור 'תן זכות קדימה', לכן הוא חייב לתת זכות קדימה לכל מי שרוצה להכנס לצומת לפניו. ולכן הרכב הצהוב נכנס ראשון לצומת",
                 bgImage: "images/background5.png",
                 solutionImage: "images/solution5.png",
@@ -858,13 +868,14 @@
                     { color: 'red', direction: 'straight' },
                     { color: 'blue', direction: 'straight' }
                 ],
-                bubbleText: 'מי נכנס ראשון לצומת, ומי האחרון?',
+                bubbleText: 'אז מי נכנס ראשון, ומי אחרון?!',
+                bubbleBody: 'כוונו או גררו את כל המכוניות אל היעד שלהן, בסדר הנכון לפי זכות הקדימה!\nחוקי העזר הרלוונטיים מחכים לכם פה בצד ימין.\nשימו לב, אתם על זמן!',
                 rules: ['[יש להכניס כאן את חוקי העזר לשאלה זו]']
             },
             {
                 id: 6,
                 instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
-                errorText: "אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                errorText: "נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
                 solutionText: "נכון מאוד! הרכב הצהוב פונה מחד סטרי אל חד סטרי, לכן הוא יצמד לשמאל ויפנה מהנתיב השמאלי אל הנתיב השמאלי. הרכב האדום פונה מדו סטרי אל דו סטרי, לכן יפנה שמאלה בהצמדות לימין, מהנתיב הימני אל הנתיב הימני.",
                 bgImage: "images/background6.png",
                 solutionImage: "images/solution6.png",
@@ -890,12 +901,13 @@
                     { color: 'yellow', direction: 'left' }
                 ],
                 bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
+                bubbleBody: 'כוונו או גררו את הרכבים אל הנתיב הנכון!\nשימו לב למאפייני הכביש והצומת.\nשימו לב, אתם על זמן!',
                 rules: ['פונה שמאלה מחד-סטרי: מנתיב שמאלי אל נתיב שמאלי','פונה שמאלה מדו-סטרי: מנתיב ימני אל נתיב ימני']
             },
             {
                 id: 7,
                 instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
-                errorText: "אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                errorText: "נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
                 solutionText: "נכון מאוד! הרכב הצהוב פונה מדו סטרי אל דו סטרי, לכן יפנה שמאלה בהצמדות לימין, מהנתיב הימני אל הנתיב הימני. הרכב האדום פונה מדו סטרי אל חד סטרי, לכן יפנה מהנתיב הימני אל הנתיב השמאלי.",
                 bgImage: "images/background7.png",
                 solutionImage: "images/solution7.png",
@@ -921,12 +933,13 @@
                     { color: 'red', direction: 'left' }
                 ],
                 bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
+                bubbleBody: 'כוונו או גררו את הרכבים אל הנתיב הנכון!\nשימו לב למאפייני הכביש והצומת.\nשימו לב, אתם על זמן!',
                 rules: ['פונה שמאלה מחד-סטרי: מנתיב שמאלי אל נתיב שמאלי','פונה שמאלה מדו-סטרי: מנתיב ימני אל נתיב ימני']
             },
             {
                 id: 8,
                 instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
-                errorText: "אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                errorText: "נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
                 solutionText: "נכון מאוד! הרכב הצהוב פונה מדו סטרי אל חד סטרי, מאחר וזה כביש שיש בו שטח הפרדה, לכן יפנה מהנתיב הימני אל הנתיב השמאלי.",
                 bgImage: "images/background8.png",
                 solutionImage: "images/solution8.png",
@@ -952,6 +965,7 @@
                     { color: 'red', direction: 'left' }
                 ],
                 bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
+                bubbleBody: 'כוונו או גררו את הרכבים אל הנתיב הנכון!\nשימו לב למאפייני הכביש והצומת.\nשימו לב, אתם על זמן!',
                 rules: ['בכביש עם שטח הפרדה: פנה מנתיב ימני אל נתיב שמאלי','שטח ההפרדה מהווה מחסום בין כיווני הנסיעה']
             }
         ];
@@ -1045,6 +1059,7 @@
         let currentLevelIndex = 0;
         let currentPhase = 'select';  // 'select' | 'drive'
         let movedCars    = new Set();
+        let levelSuccessAutoTimer = null;
 
         // ==========================================
         //   TIMER
@@ -1088,7 +1103,7 @@
         }
 
         function onTimerExpired() {
-            document.getElementById('police-error-text').innerHTML = '⏰ נגמר הזמן!<br>נסו שוב';
+            document.getElementById('police-error-text').innerHTML = 'עבר הזמן! נסו שוב';
             document.getElementById('police-screen').classList.add('show');
         }
 
@@ -1199,48 +1214,52 @@
                     drivingPath = activePaths[drivingCar.name][chosen];
                     drivingDir  = chosen;
                     drivingT    = 0;
-                } else if (dirs.length > 1 && drivingT < 0.7) {
+                } else if (dirs.length > 1 && drivingT < 0.15) {
+                    // Allow direction switch only near the start
                     const newDir = pickBestDir();
                     if (newDir !== drivingDir) {
-                        const newPath = activePaths[drivingCar.name][newDir];
-                        const newT = findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? drivingT;
-                        drivingPath = newPath;
+                        drivingPath = activePaths[drivingCar.name][newDir];
                         drivingDir  = newDir;
-                        drivingT    = newT;
+                        drivingT    = 0;
                     }
                 }
 
                 if (!drivingPath) return;
 
-                // Delta-based advancement: project pointer movement onto path tangent.
-                // This prevents the car from getting stuck when the pointer is not
-                // perfectly aligned with the path (common on mobile touch).
+                // Delta-based movement — allows both forward and backward drag
                 const pdx = pointer.x - lastPointerX;
                 const pdy = pointer.y - lastPointerY;
                 lastPointerX = pointer.x;
                 lastPointerY = pointer.y;
 
-                const tangent = drivingPath.getTangent(Math.min(drivingT, 0.999));
+                const tangent = drivingPath.getTangent(Math.min(Math.max(drivingT, 0.001), 0.999));
                 const forward = pdx * tangent.x + pdy * tangent.y;
                 const pathLen = drivingPath.getLength() || 400;
-                const deltaT = forward / pathLen;
+                const deltaT  = forward / pathLen;
+                const proposedT = Math.min(Math.max(drivingT + deltaT, 0), 1.0);
 
-                // Also check closest point on path — take whichever is further ahead
-                const pointerT = findClosestPointOnPath(drivingPath, pointer.x, pointer.y) ?? drivingT;
-                const proposedT = Math.min(Math.max(pointerT, drivingT + deltaT, drivingT), 1.0);
+                drivingT = proposedT;
+                drivingCar.pathFollower.t = drivingT;
+                const pt = drivingPath.getPoint(drivingT);
+                drivingCar.x = pt.x;
+                drivingCar.y = pt.y;
+                const tang = drivingPath.getTangent(Math.min(drivingT, 0.999));
+                drivingCar.rotation = tang.angle() + Math.PI / 2;
 
-                if (proposedT > drivingT) {
-                    drivingT = proposedT;
-                    drivingCar.pathFollower.t = drivingT;
-                    const pt = drivingPath.getPoint(drivingT);
-                    drivingCar.x = pt.x;
-                    drivingCar.y = pt.y;
-                    const tang = drivingPath.getTangent(drivingT);
-                    drivingCar.rotation = tang.angle() + Math.PI / 2;
-                    if (drivingT >= 0.9) {
-                        isDraggingB = false;
-                        completeDrive();
+                // Dragged back to start — reset for fresh direction choice
+                if (drivingT < 0.03 && drivingDir) {
+                    const carData = LEVELS[currentLevelIndex].cars.find(c => c.id === drivingCar.name);
+                    if (carData) {
+                        drivingCar.x = carData.x; drivingCar.y = carData.y;
+                        drivingCar.rotation = Phaser.Math.DegToRad(carData.angle);
                     }
+                    drivingDir = null; drivingPath = null; drivingT = 0;
+                    dragStartX = pointer.x; dragStartY = pointer.y;
+                }
+
+                if (drivingT >= 0.9) {
+                    isDraggingB = false;
+                    completeDrive();
                 }
             });
 
@@ -1400,6 +1419,7 @@
                 drivingKey     = key;
                 waitingForLane = false;
                 laneOptions    = null;
+                carLaneOptions[drivingCar.name] = null; // prevent fork re-triggering
                 clearForkUI();
                 return;
             }
@@ -1588,7 +1608,7 @@
             });
 
             // Reset UI
-            document.getElementById('level-title').innerText = `שאלה מספר ${levelData.id}`;
+            document.getElementById('level-title').innerText = `תרחיש מס' ${levelData.id}`;
             document.getElementById('ui-instructions').innerText = levelData.instruction || '';
             document.getElementById('status-msg').style.display    = 'none';
             document.getElementById('solution-img').style.display  = 'none';
@@ -1758,8 +1778,8 @@
                         car.setTint(0xffffff);
                         car.setInteractive({ cursor: 'pointer', useHandCursor: true });
                         const errText = (wrongDir && wrongDir.endsWith('_wrong'))
-                            ? (levelData.errorText || 'אוי לא, נכנסת לנתיב הלא נכון! נסה לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.')
-                            : 'בום, עשית תאונה! נסה להכנס שוב לצומת, הפעם בכיוון הנכון.';
+                            ? (levelData.errorText || 'נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.')
+                            : 'נכנסתם לצומת בכיוון הלא נכון! נסו שוב, הפעם בכיוון הנכון.';
                         document.getElementById('police-error-text').innerHTML = errText;
                         document.getElementById('police-screen').classList.add('show');
                     }
@@ -1806,7 +1826,7 @@
         function showLevelSuccess() {
             stopTimer();
             const levelData = LEVELS[currentLevelIndex];
-            document.getElementById('level-success-badge').textContent = `שאלה ${levelData.id}`;
+            document.getElementById('level-success-badge').textContent = `תרחיש מס' ${levelData.id}`;
             document.getElementById('level-success-text').textContent  = levelData.solutionText || 'כל הכבוד! תשובה נכונה.';
             const img = document.getElementById('level-success-img');
             if (levelData.solutionImage) { img.src = levelData.solutionImage; img.style.display = 'block'; }
@@ -1815,7 +1835,8 @@
             const isLast  = (currentLevelIndex === LEVELS.length - 1);
             nextBtn.style.display = isLast ? 'none' : 'block';
             document.getElementById('level-success-popup').classList.add('show');
-            if (isLast) setTimeout(() => {
+            if (isLast) levelSuccessAutoTimer = setTimeout(() => {
+                levelSuccessAutoTimer = null;
                 document.getElementById('level-success-popup').classList.remove('show');
                 showEndScreen();
             }, 3000);
@@ -1826,6 +1847,7 @@
             nextLevel();
         }
         function closeLevelSuccessAndRetry() {
+            if (levelSuccessAutoTimer) { clearTimeout(levelSuccessAutoTimer); levelSuccessAutoTimer = null; }
             document.getElementById('level-success-popup').classList.remove('show');
             initLevel();
         }
@@ -1877,7 +1899,7 @@
         // ==========================================
         function showCarSuccessPopup(isLastCar) {
             document.getElementById('car-success-sub').textContent =
-                isLastCar ? 'סיימת את כל השלב! 🏁' : 'ממשיכים לרכב הבא...';
+                isLastCar ? 'סיימת את כל השלב!' : 'ממשיכים לרכב הבא...';
             const popup = document.getElementById('car-success-popup');
             popup.classList.add('show');
             setTimeout(() => popup.classList.remove('show'), 1200);
@@ -1894,12 +1916,13 @@
         //   PRE-QUESTION BUBBLE
         // ==========================================
         function showQuestionBubble(levelData) {
-            // Extract short question from instruction (text before first '?' or '??')
             const instr = levelData.instruction || '';
             const short = levelData.bubbleText
                 || (instr.split('??')[0] || instr.split('?')[0] || instr).trim();
-            document.getElementById('bubble-level-badge').textContent = `שאלה ${levelData.id}`;
+            document.getElementById('bubble-level-badge').textContent = `תרחיש מס' ${levelData.id}`;
             document.getElementById('bubble-text').textContent = short;
+            const bodyEl = document.getElementById('bubble-body');
+            if (bodyEl) bodyEl.textContent = levelData.bubbleBody || '';
             document.getElementById('question-bubble').classList.add('show');
         }
         function closeQuestionBubble() {
@@ -1923,6 +1946,11 @@
         }
         function retryCurrentCar() {
             document.getElementById('police-screen').classList.remove('show');
+            // Disable Phaser input briefly to prevent click-through to car below
+            if (gameScene && gameScene.input) {
+                gameScene.input.enabled = false;
+                setTimeout(() => { if (gameScene && gameScene.input) gameScene.input.enabled = true; }, 200);
+            }
             startTimer();
             currentPhase = 'select';
             // Reset only the current car being driven (or the wrongly selected one)
