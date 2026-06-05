@@ -1599,7 +1599,9 @@
                 const correctDir = solutionDirMap[carId];
                 for (let dir in activePaths[carId]) {
                     const isCorrect = (dir === correctDir);
-                    const isWrong   = dir.endsWith('_wrong');
+                    // Only show the direct _wrong variant of the correct direction (e.g. left_wrong when correct=left)
+                    // Don't show cross_wrong or other unrelated wrong paths
+                    const isWrong   = correctDir ? (dir === correctDir + '_wrong') : false;
                     if (!isCorrect && !isWrong) continue;
                     const endPt = activePaths[carId][dir].getPoint(1);
                     if (!endPt) continue;
