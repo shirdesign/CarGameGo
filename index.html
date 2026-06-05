@@ -1209,31 +1209,35 @@
                     }
                 }
 
-                if (!drivingDir) {
-                    const chosen = pickBestDir();
-                    drivingPath = activePaths[drivingCar.name][chosen];
-                    drivingDir  = chosen;
-                    drivingT    = 0;
-                } else if (dirs.length > 1 && drivingT < 0.15) {
-                    // Allow direction switch only near the start
-                    const newDir = pickBestDir();
-                    if (newDir !== drivingDir) {
-                        drivingPath = activePaths[drivingCar.name][newDir];
-                        drivingDir  = newDir;
-                        drivingT    = 0;
-                    }
-                }
-
-                if (!drivingPath) return;
-
                 // Delta-based movement — allows both forward and backward drag
                 const pdx = pointer.x - lastPointerX;
                 const pdy = pointer.y - lastPointerY;
                 lastPointerX = pointer.x;
                 lastPointerY = pointer.y;
 
+                if (!drivingDir) {
+                    const chosen = pickBestDir();
+                    drivingPath = activePaths[drivingCar.name][chosen];
+                    drivingDir  = chosen;
+                    drivingT    = 0;
+                }
+
+                if (!drivingPath) return;
+
                 const tangent = drivingPath.getTangent(Math.min(Math.max(drivingT, 0.001), 0.999));
                 const forward = pdx * tangent.x + pdy * tangent.y;
+
+                // Allow direction switch only when moving forward and not too far yet
+                if (dirs.length > 1 && drivingT < 0.7 && forward > 0) {
+                    const newDir = pickBestDir();
+                    if (newDir !== drivingDir) {
+                        const newPath = activePaths[drivingCar.name][newDir];
+                        const newT = findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? drivingT;
+                        drivingPath = newPath;
+                        drivingDir  = newDir;
+                        drivingT    = newT;
+                    }
+                }
                 const pathLen = drivingPath.getLength() || 400;
                 const deltaT  = forward / pathLen;
                 const proposedT = Math.min(Math.max(drivingT + deltaT, 0), 1.0);
