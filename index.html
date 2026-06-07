@@ -1196,9 +1196,6 @@
             this.input.on('pointermove', (pointer) => {
                 if (currentPhase !== 'drive' || !isDraggingB || !drivingCar || !pointer.isDown) return;
 
-                // ── If keyboard fork is active, ignore drag (keyboard handles it) ──
-                if (waitingForLane) return;
-
                 const dx = pointer.x - dragStartX;
                 const dy = pointer.y - dragStartY;
                 const totalDist = Math.sqrt(dx*dx + dy*dy);
@@ -1241,6 +1238,7 @@
                     drivingPath = activePaths[drivingCar.name][chosen];
                     drivingDir  = chosen;
                     drivingT    = 0;
+                    clearForkUI();   // remove start-position hint arrows once dragging
                 }
 
                 if (!drivingPath) return;
@@ -1248,8 +1246,11 @@
                 const tangent = drivingPath.getTangent(Math.min(Math.max(drivingT, 0.001), 0.999));
                 const forward = pdx * tangent.x + pdy * tangent.y;
 
-                // Allow direction switch only when moving forward and not too far yet
-                if (dirs.length > 1 && drivingT < 0.7 && forward > 0) {
+                // Allow direction/lane switch while moving forward.
+                // For lane-choice levels (left + left_wrong) keep switching almost the
+                // whole way so the player can steer to EITHER flag (correct or wrong).
+                const switchWindow = isLaneChoice ? 0.9 : 0.7;
+                if (dirs.length > 1 && drivingT < switchWindow && forward > 0) {
                     const newDir = pickBestDir();
                     if (newDir !== drivingDir) {
                         const newPath = activePaths[drivingCar.name][newDir];
@@ -1270,22 +1271,6 @@
                 drivingCar.y = pt.y;
                 const tang = drivingPath.getTangent(Math.min(drivingT, 0.999));
                 drivingCar.rotation = tang.angle() + Math.PI / 2;
-
-                // ── Trigger fork UI when drag reaches divergence point ──
-                const dragLanes = carLaneOptions[drivingCar.name];
-                if (dragLanes && !waitingForLane && drivingT >= dragLanes.forkT) {
-                    const onLanePath = (drivingDir === dragLanes.up.dir || drivingDir === dragLanes.down.dir);
-                    if (onLanePath) {
-                        waitingForLane = true;
-                        laneOptions    = dragLanes;
-                        drivingT = dragLanes.forkT;
-                        drivingCar.pathFollower.t = drivingT;
-                        const forkPt = drivingPath.getPoint(drivingT);
-                        drivingCar.x = forkPt.x; drivingCar.y = forkPt.y;
-                        showForkUI(dragLanes);
-                        return;
-                    }
-                }
 
                 // Dragged back to start — reset for fresh direction choice
                 if (drivingT < 0.03 && drivingDir) {
@@ -1447,27 +1432,32 @@
 
             if (!isArrow || currentPhase !== 'drive' || !drivingCar) return;
 
-            // ── Fork: waiting for ↑/↓ lane choice ──────────────────────────
-            if (waitingForLane && laneOptions) {
-                let chosen = null;
-                if (key === 'ArrowUp')   chosen = laneOptions.up;
-                if (key === 'ArrowDown') chosen = laneOptions.down;
-                if (!chosen) return;
-                // Commit to chosen lane from the fork point
-                drivingPath    = chosen.path;
-                drivingDir     = chosen.dir;
-                // drivingT stays where the car paused
-                drivingKey     = key;
-                waitingForLane = false;
-                laneOptions    = null;
-                carLaneOptions[drivingCar.name] = null; // prevent fork re-triggering
-                clearForkUI();
-                return;
-            }
-
             if (!activePaths[drivingCar.name]) return;
             const dirs = Object.keys(activePaths[drivingCar.name]);
             if (dirs.length === 0) return;
+
+            // ── Lane-choice level (left + left_wrong): ↑/↓ pick which flag ──
+            // ↑ = upper flag, ↓ = lower flag. Either may be correct or wrong —
+            // the player must choose, and reaching the wrong one triggers an error.
+            const laneData = carLaneOptions[drivingCar.name];
+            if (laneData) {
+                let chosen = null;
+                if (key === 'ArrowUp')   chosen = laneData.up;
+                if (key === 'ArrowDown') chosen = laneData.down;
+                if (!chosen) return;   // only ↑/↓ steer on lane-choice levels
+                if (chosen.dir !== drivingDir) {
+                    const newPath = chosen.path;
+                    const newT = drivingT > 0
+                        ? (findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? 0)
+                        : 0;
+                    drivingPath = newPath;
+                    drivingDir  = chosen.dir;
+                    drivingT    = newT;
+                }
+                drivingKey = key;
+                clearForkUI();
+                return;
+            }
 
             const worldAngles = {
                 'ArrowUp':    -Math.PI / 2,
@@ -1478,13 +1468,8 @@
             const arrowAngle = worldAngles[key];
             if (arrowAngle === undefined) return;
 
-            // For keyboard: exclude left_wrong-style variants (base path exists),
-            // but keep cross_wrong (no base path exists) so it is reachable.
-            const keyboardDirs = dirs.filter(d => {
-                if (!d.endsWith('_wrong')) return true;
-                const base = d.replace('_wrong', '');
-                return !dirs.includes(base);
-            });
+            // Non-lane levels: choose among distinct directions; ignore _wrong variants
+            const keyboardDirs = dirs.filter(d => !d.endsWith('_wrong'));
             if (keyboardDirs.length === 0) return;
 
             let chosen;
@@ -1518,7 +1503,6 @@
 
         function update() {
             if (currentPhase !== 'drive' || !drivingCar || !drivingPath) return;
-            if (waitingForLane) return; // paused at fork — waiting for ↑/↓
 
             if (!drivingKey || !keysHeld.has(drivingKey)) return;
 
@@ -1530,20 +1514,6 @@
             const targetAngle = tang.angle() + Math.PI / 2;
             drivingCar.rotation = Phaser.Math.Angle.RotateTo(drivingCar.rotation, targetAngle, 0.15);
             drivingCar.pathFollower.t = drivingT;
-
-            // Check if car has reached the lane-fork point for this car
-            const lanes = carLaneOptions[drivingCar.name];
-            if (lanes && !waitingForLane && drivingT >= lanes.forkT) {
-                // Only trigger fork if currently on one of the lane-choice paths
-                const onLanePath = (drivingDir === lanes.up.dir || drivingDir === lanes.down.dir);
-                if (onLanePath) {
-                    waitingForLane = true;
-                    laneOptions    = lanes;
-                    drivingKey     = null; // stop advancing
-                    showForkUI(lanes);
-                    return;
-                }
-            }
 
             if (drivingT >= 0.9) {
                 completeDrive();
@@ -1789,6 +1759,11 @@
                     c.disableInteractive();
                 }
             });
+
+            // Lane-choice level: show ↑/↓ hint arrows toward the two possible flags
+            const lanes = carLaneOptions[car.name];
+            if (lanes) showForkUI(lanes);
+            else clearForkUI();
         }
 
         function completeDrive() {
