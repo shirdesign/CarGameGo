@@ -1196,33 +1196,8 @@
             this.input.on('pointermove', (pointer) => {
                 if (currentPhase !== 'drive' || !isDraggingB || !drivingCar || !pointer.isDown) return;
 
-                // ── Fork choice during drag (levels 6-8 lane selection) ──
-                if (waitingForLane && laneOptions) {
-                    const pdx = pointer.x - lastPointerX;
-                    const pdy = pointer.y - lastPointerY;
-                    lastPointerX = pointer.x;
-                    lastPointerY = pointer.y;
-                    const moveDist = Math.sqrt(pdx*pdx + pdy*pdy);
-                    if (moveDist > 6) {
-                        // Pick lane by dragging toward the endpoint you want
-                        let chosen = null, bestDist = Infinity;
-                        for (const opt of [laneOptions.up, laneOptions.down]) {
-                            const ep = opt.path.getPoint(1);
-                            if (!ep) continue;
-                            const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, ep.x, ep.y);
-                            if (dist < bestDist) { bestDist = dist; chosen = opt; }
-                        }
-                        if (chosen) {
-                            drivingPath = chosen.path;
-                            drivingDir  = chosen.dir;
-                            waitingForLane = false;
-                            laneOptions    = null;
-                            carLaneOptions[drivingCar.name] = null;
-                            clearForkUI();
-                        }
-                    }
-                    return; // stay paused until choice made
-                }
+                // ── If keyboard fork is active, ignore drag (keyboard handles it) ──
+                if (waitingForLane) return;
 
                 const dx = pointer.x - dragStartX;
                 const dy = pointer.y - dragStartY;
