@@ -391,7 +391,7 @@
                         <button type="button" class="btn btn-secondary" id="btn-path-straight">➡️ מסלול ישר (2 לחיצות)</button>
                         <button type="button" class="btn btn-secondary" id="btn-path-left">↩️ מסלול שמאל (לחיצות לאורך הדרך)</button>
                         <button type="button" class="btn btn-secondary" id="btn-path-right">↪️ מסלול ימין (לחיצות לאורך הדרך)</button>
-                        <button type="button" class="btn btn-secondary" id="btn-path-left-wrong" style="background:#e67e22;color:white;">⚠️ מסלול שגוי — left_wrong</button>
+                        <button type="button" class="btn btn-secondary" id="btn-path-left-wrong" style="background:#e67e22;color:white;">⚠️ מסלול שגוי - left_wrong</button>
                         <button type="button" class="btn btn-secondary" id="btn-path-clear" style="display:none;">🗑 נקה ונבטל</button>
                         <span id="path-editor-hint" style="margin-right:10px; color:#666;"></span>
                     </div>
@@ -1034,7 +1034,7 @@
         }
         
         function pathDirLabel(dir) {
-            const labels = { straight: 'ישר', left: 'שמאל', right: 'ימין', left_wrong: 'שמאל — נתיב שגוי', cross_wrong: 'ניצול שגוי' };
+            const labels = { straight: 'ישר', left: 'שמאל', right: 'ימין', left_wrong: 'שמאל - נתיב שגוי', cross_wrong: 'ניצול שגוי' };
             return labels[dir] || dir;
         }
 
@@ -1393,7 +1393,7 @@
             a.download = 'levels.json';
             a.click();
             URL.revokeObjectURL(a.href);
-            errorEl.textContent = 'הקובץ levels.json הורד — החליפי אותו בתיקייה ועשי git push.';
+            errorEl.textContent = 'הקובץ levels.json הורד - החליפי אותו בתיקייה ועשי git push.';
             errorEl.style.color  = '#1565c0';
             errorEl.style.display = 'block';
             setTimeout(() => { errorEl.style.display = 'none'; }, 6000);

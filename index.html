@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
-        html { overflow-x: hidden; }     /* מונע גלילה אופקית — על html כדי שלא ישבש position:fixed במובייל */
+        html { overflow-x: hidden; }     /* מונע גלילה אופקית - על html כדי שלא ישבש position:fixed במובייל */
         body {
             margin: 0; padding: 20px 0; background-color: #e0e0e0;
             font-family: 'Varela Round', sans-serif;
@@ -196,7 +196,7 @@
         @media (max-width: 1100px) {
             body { align-items: flex-start; }
             #traffic-game-container { width: 100%; max-width: 100%; padding: 0; }
-            /* שורת המשחק נשארת row — משחק + סידבר זה לצד זה */
+            /* שורת המשחק נשארת row - משחק + סידבר זה לצד זה */
             #game-ui-row { align-items: stretch; }
             #game-container { border-radius: 0; box-shadow: none; flex-shrink: 0; }
             #ui-layer {
@@ -447,7 +447,7 @@
             #timer-display { font-size: 15px; letter-spacing: 1px; }
             #timer-progress-bg { height: 4px; }
             .content { padding: 6px 10px; font-size: 12px; gap: 6px; }
-            /* מסתיר את פאנל "איך משחקים?" — מספיק שמופיע במסך הפתיחה */
+            /* מסתיר את פאנל "איך משחקים?" - מספיק שמופיע במסך הפתיחה */
             .content > .how-to-panel { display: none; }
             .btn { font-size: 12px; padding: 7px 10px; border-radius: 8px; }
             #ui-instructions { font-size: 12px; line-height: 1.5; }
@@ -504,7 +504,7 @@
             .level-success-btns .btn { font-size: 12px; padding: 8px 10px; }
         }
 
-        /* טאבלט בינוני — הקטן קצת */
+        /* טאבלט בינוני - הקטן קצת */
         @media (max-height: 700px) and (min-height: 521px) {
             #timer-display { font-size: 17px; }
             .content { font-size: 14px; gap: 8px; }
@@ -536,10 +536,10 @@
             <p class="intro-subtitle">למדתם הכל על פניות וזכות קדימה,<br>הגיע הזמן לראות מה אתם יודעים</p>
             <div class="how-to-panel" style="width:100%; margin:0;">
                 <strong>איך משחקים?</strong>
-                <div>שלב א׳ — בוחרים את הרכב שתורו לסוע, לפי זכויות הקדימה</div>
-                <div>שלב ב׳ — <span style="font-weight:700;">כוונו</span> או <span style="font-weight:700;">גררו</span> את הרכב לנקודת היעד שלו, המסומנת בצבע הרכב</div>
+                <div>שלב א׳ - בוחרים את הרכב שתורו לסוע, לפי זכויות הקדימה</div>
+                <div>שלב ב׳ - <span style="font-weight:700;">כוונו</span> או <span style="font-weight:700;">גררו</span> את הרכב לנקודת היעד שלו, המסומנת בצבע הרכב</div>
                 <div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
-                    <div><span style="font-weight:700;">כוונו</span> — בעזרת החצים במקלדת
+                    <div><span style="font-weight:700;">כוונו</span> - בעזרת החצים במקלדת
                         <span style="display:inline-flex; gap:2px; margin-right:4px; vertical-align:middle;">
                             <kbd style="background:#eee;border:1px solid #bbb;border-radius:4px;padding:1px 5px;font-size:11px;font-family:monospace;">←</kbd>
                             <kbd style="background:#eee;border:1px solid #bbb;border-radius:4px;padding:1px 5px;font-size:11px;font-family:monospace;">→</kbd>
@@ -548,7 +548,7 @@
                         </span>
                     </div>
                     <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
-                        <span style="font-weight:700;">גררו</span> — עם היד על המסך
+                        <span style="font-weight:700;">גררו</span> - עם האצבע או הסמן על המסך
                         <span class="swipe-hand" style="font-size:18px; display:inline-block;">👆</span>
                     </div>
                 </div>
@@ -1042,7 +1042,7 @@
             const maxW = window.innerWidth;
             const maxH = window.innerHeight - bodyPad - 4;
 
-            // על מסכים קטנים (מובייל לרוחב) — שמור מקום מינימלי לסיידבר
+            // על מסכים קטנים (מובייל לרוחב) - שמור מקום מינימלי לסיידבר
             const isMobileLandscape = window.innerHeight < 520;
             const minSidebarW = isMobileLandscape ? Math.max(140, Math.min(210, maxW * 0.26)) : 0;
             const availW = maxW - minSidebarW;
@@ -1177,7 +1177,7 @@
         }
 
         // ==========================================
-        //   PHASER: CREATE — input handlers
+        //   PHASER: CREATE - input handlers
         // ==========================================
         function create() {
             gameScene = this;
@@ -1213,7 +1213,7 @@
                 function pickBestDir() {
                     if (dirs.length === 1) return dirs[0];
                     if (isLaneChoice) {
-                        // Lane choice: pick by endpoint proximity — drag toward the destination you want
+                        // Lane choice: pick by endpoint proximity - drag toward the destination you want
                         let best = dirs[0], bestDist = Infinity;
                         for (const d of dirs) {
                             const ep = activePaths[drivingCar.name][d].getPoint(1);
@@ -1227,7 +1227,7 @@
                     }
                 }
 
-                // Delta-based movement — allows both forward and backward drag
+                // Delta-based movement - allows both forward and backward drag
                 const pdx = pointer.x - lastPointerX;
                 const pdy = pointer.y - lastPointerY;
                 lastPointerX = pointer.x;
@@ -1272,7 +1272,7 @@
                 const tang = drivingPath.getTangent(Math.min(drivingT, 0.999));
                 drivingCar.rotation = tang.angle() + Math.PI / 2;
 
-                // Dragged back to start — reset for fresh direction choice
+                // Dragged back to start - reset for fresh direction choice
                 if (drivingT < 0.03 && drivingDir) {
                     const carData = LEVELS[currentLevelIndex].cars.find(c => c.id === drivingCar.name);
                     if (carData) {
@@ -1291,7 +1291,7 @@
 
             this.input.on('pointerup', () => {
                 isDraggingB = false;
-                // In Phase B: car stays where it is — player can drag again to continue
+                // In Phase B: car stays where it is - player can drag again to continue
             });
 
             initLevel();
@@ -1334,7 +1334,7 @@
         }
 
         // ==========================================
-        //   LANE FORK — helpers
+        //   LANE FORK - helpers
         // ==========================================
 
         // Find t where two paths diverge beyond threshold pixels
@@ -1420,7 +1420,7 @@
         }
 
         // ==========================================
-        //   נהיגה ידנית במקלדת — שלב ב׳
+        //   נהיגה ידנית במקלדת - שלב ב׳
         // ==========================================
         function handleKeyDown(event) {
             const key  = event.key;
@@ -1437,7 +1437,7 @@
             if (dirs.length === 0) return;
 
             // ── Lane-choice level (left + left_wrong): ↑/↓ pick which flag ──
-            // ↑ = upper flag, ↓ = lower flag. Either may be correct or wrong —
+            // ↑ = upper flag, ↓ = lower flag. Either may be correct or wrong -
             // the player must choose, and reaching the wrong one triggers an error.
             const laneData = carLaneOptions[drivingCar.name];
             if (laneData) {
@@ -1584,7 +1584,7 @@
                 if (lanes) carLaneOptions[carId] = lanes;
             }
 
-            // Destination circles (correct + wrong destinations both shown — player doesn't know which is right)
+            // Destination circles (correct + wrong destinations both shown - player doesn't know which is right)
             const carColors = { red: 0xff3333, yellow: 0xffdd00, blue: 0x44aaff, grey: 0xaaaaaa };
             const solutionDirMap = {};
             levelData.solution.forEach(s => { solutionDirMap[s.color] = s.direction; });
@@ -1680,7 +1680,7 @@
         }
 
         // ==========================================
-        //   PHASE A — SELECT THE RIGHT CAR
+        //   PHASE A - SELECT THE RIGHT CAR
         // ==========================================
         const phaseATexts = [
             'סמנו את המכונית שיש לה זכות קדימה ראשונה, העזרו בחוקים',
@@ -1735,7 +1735,7 @@
         }
 
         // ==========================================
-        //   PHASE B — DRIVE TO DESTINATION
+        //   PHASE B - DRIVE TO DESTINATION
         // ==========================================
         function startPhaseDrive(car) {
             currentPhase = 'drive';
@@ -1777,7 +1777,7 @@
             const isWrong    = !drivingDir || !expectedDir || drivingDir !== expectedDir;
 
             if (isWrong) {
-                // Wrong destination — shake, snap back, then show police screen
+                // Wrong destination - shake, snap back, then show police screen
                 const car      = drivingCar;
                 const path     = drivingPath;
                 const carData  = levelData.cars.find(c => c.id === car.name);
@@ -1983,7 +1983,7 @@
             levelData.cars.forEach(cd => {
                 const car = carsMap[cd.id];
                 if (!car) return;
-                if (car.hasMoved) return; // already completed — leave in place
+                if (car.hasMoved) return; // already completed - leave in place
                 // Reset this car to its original position
                 car.x = cd.x; car.y = cd.y;
                 car.rotation = Phaser.Math.DegToRad(cd.angle);
