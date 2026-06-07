@@ -391,6 +391,7 @@
                         <button type="button" class="btn btn-secondary" id="btn-path-straight">➡️ מסלול ישר (2 לחיצות)</button>
                         <button type="button" class="btn btn-secondary" id="btn-path-left">↩️ מסלול שמאל (לחיצות לאורך הדרך)</button>
                         <button type="button" class="btn btn-secondary" id="btn-path-right">↪️ מסלול ימין (לחיצות לאורך הדרך)</button>
+                        <button type="button" class="btn btn-secondary" id="btn-path-left-wrong" style="background:#e67e22;color:white;">⚠️ מסלול שגוי — left_wrong</button>
                         <button type="button" class="btn btn-secondary" id="btn-path-clear" style="display:none;">🗑 נקה ונבטל</button>
                         <span id="path-editor-hint" style="margin-right:10px; color:#666;"></span>
                     </div>
@@ -803,28 +804,67 @@
                 ctx.fillText(car.id, car.x, car.y + 4);
             });
             if (level.paths) {
-                ctx.strokeStyle = 'rgba(0,255,0,0.7)';
-                ctx.lineWidth = 3;
+                // Build correct-direction map from solution
+                const correctDirMap = {};
+                (level.solution || []).forEach(s => { correctDirMap[s.color] = s.direction; });
+
                 for (const carId of Object.keys(level.paths)) {
+                    const correctDir = correctDirMap[carId];
                     for (const dir of Object.keys(level.paths[carId])) {
                         const p = level.paths[carId][dir];
                         if (!p) continue;
+
+                        // Color: green=correct, orange=left_wrong, red dashed=cross_wrong, gray=other
+                        if (dir === correctDir) {
+                            ctx.strokeStyle = 'rgba(0,220,0,0.9)';
+                            ctx.lineWidth = 4;
+                            ctx.setLineDash([]);
+                        } else if (dir === 'left_wrong') {
+                            ctx.strokeStyle = 'rgba(230,120,0,0.9)';
+                            ctx.lineWidth = 3;
+                            ctx.setLineDash([]);
+                        } else if (dir === 'cross_wrong') {
+                            ctx.strokeStyle = 'rgba(200,0,0,0.8)';
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([8, 6]);
+                        } else {
+                            ctx.strokeStyle = 'rgba(150,150,150,0.7)';
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([4, 4]);
+                        }
+
                         ctx.beginPath();
+                        let midX = p.start[0], midY = p.start[1];
                         if (p.type === 'line') {
                             ctx.moveTo(p.start[0], p.start[1]);
                             ctx.lineTo(p.end[0], p.end[1]);
+                            midX = (p.start[0] + p.end[0]) / 2;
+                            midY = (p.start[1] + p.end[1]) / 2;
                         } else if (p.type === 'spline' && p.points && p.points.length >= 2) {
                             ctx.moveTo(p.start[0], p.start[1]);
                             for (let i = 0; i + 1 < p.points.length; i += 2) {
                                 ctx.lineTo(p.points[i], p.points[i + 1]);
                             }
+                            const mid = Math.floor(p.points.length / 2);
+                            midX = p.points[mid - (mid % 2)];
+                            midY = p.points[mid - (mid % 2) + 1];
                         } else if (p.type === 'curve' && p.p1) {
                             ctx.moveTo(p.start[0], p.start[1]);
                             ctx.quadraticCurveTo(p.p1[0], p.p1[1], p.end[0], p.end[1]);
+                            midX = p.p1[0]; midY = p.p1[1];
                         }
                         ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        // Label at midpoint
+                        const labelText = dir === correctDir ? `✓ ${dir}` : dir;
+                        ctx.font = 'bold 11px sans-serif';
+                        ctx.fillStyle = dir === correctDir ? '#00aa00' : dir === 'left_wrong' ? '#cc5500' : '#aa0000';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(labelText, midX, midY - 6);
                     }
                 }
+                ctx.setLineDash([]);
             }
             if (pathEditorPoints.length > 0) {
                 ctx.fillStyle = '#ff9800';
@@ -858,14 +898,16 @@
                 pathEditorMode = mode;
                 pathEditorPoints = [];
                 btnClear.style.display = mode ? 'inline-block' : 'none';
+                const dirLabel = { left: 'שמאל', right: 'ימין', left_wrong: 'נתיב שגוי' };
                 if (mode === 'position') hint.textContent = 'לחצי על המפה למיקום התחלה של המכונית';
                 else if (mode === 'line') hint.textContent = 'לחצי נקודת התחלה (או המכונית) ואז נקודת סיום';
-                else if (mode === 'spline') hint.textContent = 'לחצי נקודות לאורך המסלול (' + (pathEditorPathDir === 'left' ? 'שמאל' : 'ימין') + '). סיימי ב"נקה ונבטל" ואז "שמור שלב"';
+                else if (mode === 'spline') hint.textContent = 'לחצי נקודות לאורך המסלול (' + (dirLabel[pathEditorPathDir] || pathEditorPathDir) + '). סיימי ב"נקה ונבטל" ואז "שמור שלב"';
                 else hint.textContent = '';
                 document.getElementById('btn-set-position').classList.toggle('active', mode === 'position');
                 document.getElementById('btn-path-straight').classList.toggle('active', mode === 'line');
                 document.getElementById('btn-path-left').classList.toggle('active', mode === 'spline' && pathEditorPathDir === 'left');
                 document.getElementById('btn-path-right').classList.toggle('active', mode === 'spline' && pathEditorPathDir === 'right');
+                document.getElementById('btn-path-left-wrong').classList.toggle('active', mode === 'spline' && pathEditorPathDir === 'left_wrong');
                 drawPathEditorCanvas();
             }
             
@@ -885,6 +927,11 @@
             document.getElementById('btn-path-right').onclick = () => {
                 if (!carSelect.value) { alert('בחרי מכונית קודם'); return; }
                 pathEditorPathDir = 'right';
+                setMode('spline');
+            };
+            document.getElementById('btn-path-left-wrong').onclick = () => {
+                if (!carSelect.value) { alert('בחרי מכונית קודם'); return; }
+                pathEditorPathDir = 'left_wrong';
                 setMode('spline');
             };
             btnClear.onclick = () => setMode(null);
