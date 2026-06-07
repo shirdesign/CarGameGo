@@ -986,18 +986,48 @@
             `).join('');
         }
         
+        function pathDirLabel(dir) {
+            const labels = { straight: 'ישר', left: 'שמאל', right: 'ימין', left_wrong: 'שמאל — נתיב שגוי', cross_wrong: 'ניצול שגוי' };
+            return labels[dir] || dir;
+        }
+
+        function addWrongPath(carId, dirName) {
+            const level = levels[currentEditingIndex];
+            if (!level.paths[carId]) level.paths[carId] = {};
+            if (level.paths[carId][dirName]) return; // already exists
+            level.paths[carId][dirName] = { type: 'spline', start: [400, 300], points: [400, 300, 400, 100] };
+            renderEditor();
+        }
+
+        function removePath(carId, dir) {
+            const level = levels[currentEditingIndex];
+            if (level.paths[carId]) delete level.paths[carId][dir];
+            renderEditor();
+        }
+
         function renderPathsEditor(carId, carIndex) {
             const level = levels[currentEditingIndex];
             const paths = level.paths[carId] || {};
-            
+
+            // Show standard dirs + any extra dirs already in data
+            const standardDirs = ['straight', 'left', 'right'];
+            const extraDirs = Object.keys(paths).filter(d => !standardDirs.includes(d));
+            const allDirs = [...standardDirs, ...extraDirs];
+
+            const missingWrong = !paths['left_wrong'];
+            const missingCross = !paths['cross_wrong'];
+
             return `
                 <div class="path-editor">
                     <h4>מסלולים למכונית ${carId}</h4>
-                    ${['straight', 'left', 'right'].map(dir => {
+                    ${allDirs.map(dir => {
                         const path = paths[dir];
+                        const isExtra = !standardDirs.includes(dir);
                         return `
-                            <div class="path-type">
-                                <label><strong>${dir === 'straight' ? 'ישר' : dir === 'left' ? 'שמאל' : 'ימין'}:</strong></label>
+                            <div class="path-type" style="${isExtra ? 'border:1px solid #ffc107; border-radius:6px; padding:6px; margin-top:4px;' : ''}">
+                                <label><strong>${pathDirLabel(dir)}${isExtra ? ' ⚠️' : ''}:</strong>
+                                ${isExtra ? `<button onclick="removePath('${carId}','${dir}')" style="margin-right:8px;font-size:11px;padding:2px 6px;background:#dc3545;color:white;border:none;border-radius:4px;cursor:pointer;">הסר</button>` : ''}
+                                </label>
                                 <select onchange="updatePathType('${carId}', '${dir}', this.value)">
                                     <option value="">ללא מסלול</option>
                                     <option value="line" ${path && path.type === 'line' ? 'selected' : ''}>קו ישר</option>
@@ -1008,6 +1038,10 @@
                             </div>
                         `;
                     }).join('')}
+                    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                        ${missingWrong ? `<button onclick="addWrongPath('${carId}','left_wrong')" style="font-size:12px;padding:4px 10px;background:#ffc107;border:none;border-radius:6px;cursor:pointer;">+ הוסף נתיב שגוי (left_wrong)</button>` : ''}
+                        ${missingCross ? `<button onclick="addWrongPath('${carId}','cross_wrong')" style="font-size:12px;padding:4px 10px;background:#6c757d;color:white;border:none;border-radius:6px;cursor:pointer;">+ הוסף ניצול שגוי (cross_wrong)</button>` : ''}
+                    </div>
                 </div>
             `;
         }
