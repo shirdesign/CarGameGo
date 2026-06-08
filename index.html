@@ -213,15 +213,9 @@
             width: 320px; min-height: 200px; background: white;
             box-shadow: -5px 0 15px rgba(0,0,0,0.1); border-radius: 12px;
             overflow-y: auto; margin-right: 20px; display: flex; flex-direction: column;
-            scrollbar-width: thin; scrollbar-color: #F26D5C #fde8e3;
+            scrollbar-width: none;        /* hide native bar - we use a custom one (#sb-scroll-thumb) */
         }
-        /* Always-visible scrollbar so it's clear there's more text to scroll */
-        #ui-layer::-webkit-scrollbar { width: 9px; }
-        #ui-layer::-webkit-scrollbar-track { background: #fde8e3; border-radius: 5px; }
-        #ui-layer::-webkit-scrollbar-thumb {
-            background: #F26D5C; border-radius: 5px; border: 2px solid #fde8e3;
-        }
-        #ui-layer::-webkit-scrollbar-thumb:hover { background: #d45845; }
+        #ui-layer::-webkit-scrollbar { width: 0; height: 0; }
 
         /* Custom always-visible scroll indicator (works on mobile where native bars hide) */
         #sb-scroll-thumb {
@@ -496,10 +490,26 @@
         /* --- כל המסכים/מודאלים: landscape קטן --- */
         @media (max-height: 520px) {
             /* מסך פתיחה */
-            #intro-overlay { align-items: flex-start; overflow-y: auto; padding: 8px; }
+            #intro-overlay { align-items: center; overflow-y: auto; padding: 8px; }
             .intro-box {
                 padding: 5px 16px; gap: 3px; border-radius: 14px; margin: auto; max-width: 640px;
             }
+            /* Landscape: use the wide space - 2 columns so logo+button stay visible without scrolling */
+            #intro-overlay .intro-box {
+                display: grid; max-width: 840px; width: 96%;
+                grid-template-columns: 1fr 1.25fr;
+                grid-template-areas:
+                    "logo logo"
+                    "road road"
+                    "sub  panel"
+                    "btn  panel";
+                column-gap: 16px; row-gap: 6px; align-items: center; padding: 8px 18px;
+            }
+            #intro-overlay .intro-logo   { grid-area: logo; }
+            #intro-overlay .intro-road-wrap { grid-area: road; }
+            #intro-overlay .intro-subtitle  { grid-area: sub; }
+            #intro-overlay .how-to-panel    { grid-area: panel; align-self: stretch; }
+            #intro-overlay .btn-primary     { grid-area: btn; justify-self: center; align-self: center; }
             .intro-logo { display: block; }
             .intro-logo img { width: 86px; }
             .intro-partner-logo { width: 100px; }
