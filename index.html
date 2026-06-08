@@ -1179,6 +1179,7 @@
         let waitingForLane = false;  // car paused at fork, waiting for ↑/↓
         let laneOptions    = null;   // { up: {dir,path}, down: {dir,path} }
         let carLaneOptions = {};     // precomputed per car: { carId: laneOptions }
+        let laneCommitted  = false;  // true once the player picked a lane at the fork
         let forkUI         = [];     // Phaser display objects to clear after choice
 
         // נהיגה במקלדת
@@ -1246,6 +1247,57 @@
 
                 const dirs = Object.keys(activePaths[drivingCar.name] || {});
                 if (dirs.length === 0) return;
+
+                // ── Lane-choice level (6-8): drive approach, pause at fork, drag to a lane ──
+                const dragLaneData = carLaneOptions[drivingCar.name];
+                if (dragLaneData) {
+                    const pdx = pointer.x - lastPointerX;
+                    const pdy = pointer.y - lastPointerY;
+                    lastPointerX = pointer.x; lastPointerY = pointer.y;
+
+                    // Paused at the fork: drag toward the lane (flag) you want
+                    if (waitingForLane) {
+                        if (Math.sqrt(pdx*pdx + pdy*pdy) > 4) {
+                            let chosen = null, best = Infinity;
+                            for (const opt of [dragLaneData.up, dragLaneData.down]) {
+                                const ep = opt.path.getPoint(1);
+                                const d = Phaser.Math.Distance.Between(pointer.x, pointer.y, ep.x, ep.y);
+                                if (d < best) { best = d; chosen = opt; }
+                            }
+                            if (chosen) {
+                                drivingPath = chosen.path; drivingDir = chosen.dir;
+                                drivingT = findClosestPointOnPath(chosen.path, drivingCar.x, drivingCar.y) ?? drivingT;
+                                laneCommitted = true; waitingForLane = false; laneOptions = null;
+                                clearForkUI();
+                            }
+                        }
+                        return;
+                    }
+
+                    // Before the fork: drive along the shared approach
+                    if (!drivingPath) {
+                        drivingPath = dragLaneData.up.path; drivingDir = dragLaneData.up.dir; drivingT = 0;
+                        clearForkUI();
+                    }
+                    const tg = drivingPath.getTangent(Math.min(Math.max(drivingT, 0.001), 0.999));
+                    const fwd = pdx * tg.x + pdy * tg.y;
+                    const plen = drivingPath.getLength() || 400;
+                    drivingT = Math.min(Math.max(drivingT + fwd / plen, 0), 1.0);
+                    const p = drivingPath.getPoint(drivingT);
+                    drivingCar.x = p.x; drivingCar.y = p.y;
+                    drivingCar.rotation = drivingPath.getTangent(Math.min(drivingT, 0.999)).angle() + Math.PI / 2;
+                    drivingCar.pathFollower.t = drivingT;
+
+                    if (!laneCommitted && drivingT >= dragLaneData.forkT) {
+                        waitingForLane = true; laneOptions = dragLaneData; drivingT = dragLaneData.forkT;
+                        const fp = drivingPath.getPoint(drivingT);
+                        drivingCar.x = fp.x; drivingCar.y = fp.y; drivingCar.pathFollower.t = drivingT;
+                        showForkUI(dragLaneData);
+                        return;
+                    }
+                    if (laneCommitted && drivingT >= 0.9) { isDraggingB = false; completeDrive(); }
+                    return;
+                }
 
                 const dragAngle = Math.atan2(dy, dx);
 
@@ -1479,26 +1531,35 @@
             const dirs = Object.keys(activePaths[drivingCar.name]);
             if (dirs.length === 0) return;
 
-            // ── Lane-choice level (left + left_wrong): ↑/↓ pick which flag ──
-            // ↑ = upper flag, ↓ = lower flag. Either may be correct or wrong -
-            // the player must choose, and reaching the wrong one triggers an error.
+            // ── Lane-choice level (left + left_wrong) ──
+            // The car drives along the shared approach; when it reaches the fork
+            // (inside the turn) it pauses and shows ↑/↓ arrows pointing to each lane.
             const laneData = carLaneOptions[drivingCar.name];
             if (laneData) {
-                let chosen = null;
-                if (key === 'ArrowUp')   chosen = laneData.up;
-                if (key === 'ArrowDown') chosen = laneData.down;
-                if (!chosen) return;   // only ↑/↓ steer on lane-choice levels
-                if (chosen.dir !== drivingDir) {
-                    const newPath = chosen.path;
-                    const newT = drivingT > 0
-                        ? (findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? 0)
-                        : 0;
-                    drivingPath = newPath;
-                    drivingDir  = chosen.dir;
-                    drivingT    = newT;
+                // Paused at the fork - ↑/↓ commits to a lane
+                if (waitingForLane && laneOptions) {
+                    let chosen = null;
+                    if (key === 'ArrowUp')   chosen = laneOptions.up;
+                    if (key === 'ArrowDown') chosen = laneOptions.down;
+                    if (!chosen) return;
+                    drivingPath    = chosen.path;
+                    drivingDir     = chosen.dir;
+                    // drivingT stays at the fork point - continue from there
+                    drivingT       = findClosestPointOnPath(chosen.path, drivingCar.x, drivingCar.y) ?? drivingT;
+                    laneCommitted  = true;
+                    waitingForLane = false;
+                    laneOptions    = null;
+                    clearForkUI();
+                    drivingKey     = key;
+                    return;
+                }
+                // Before the fork: any arrow starts/continues driving along the approach
+                if (!drivingPath) {
+                    drivingPath = laneData.up.path;   // up & down share geometry until the fork
+                    drivingDir  = laneData.up.dir;
+                    drivingT    = 0;
                 }
                 drivingKey = key;
-                clearForkUI();
                 return;
             }
 
@@ -1546,6 +1607,7 @@
 
         function update() {
             if (currentPhase !== 'drive' || !drivingCar || !drivingPath) return;
+            if (waitingForLane) return;  // paused at the fork - waiting for ↑/↓ choice
 
             if (!drivingKey || !keysHeld.has(drivingKey)) return;
 
@@ -1557,6 +1619,20 @@
             const targetAngle = tang.angle() + Math.PI / 2;
             drivingCar.rotation = Phaser.Math.Angle.RotateTo(drivingCar.rotation, targetAngle, 0.15);
             drivingCar.pathFollower.t = drivingT;
+
+            // Lane-choice level: pause at the fork (inside the turn) and show ↑/↓ arrows
+            const lanes = carLaneOptions[drivingCar.name];
+            if (lanes && !laneCommitted && drivingT >= lanes.forkT) {
+                waitingForLane = true;
+                laneOptions    = lanes;
+                drivingKey     = null;          // stop advancing
+                drivingT       = lanes.forkT;
+                const fp = drivingPath.getPoint(drivingT);
+                drivingCar.x = fp.x; drivingCar.y = fp.y;
+                drivingCar.pathFollower.t = drivingT;
+                showForkUI(lanes);
+                return;
+            }
 
             if (drivingT >= 0.9) {
                 completeDrive();
@@ -1574,7 +1650,7 @@
             drivingCar   = null; drivingPath = null; drivingDir = null; drivingT = 0;
             drivingKey   = null;
             isDraggingB  = false;
-            waitingForLane = false; laneOptions = null; carLaneOptions = {};
+            waitingForLane = false; laneOptions = null; carLaneOptions = {}; laneCommitted = false;
             clearForkUI();
             keysHeld.clear();
 
@@ -1788,6 +1864,9 @@
             drivingT     = 0;
             drivingKey   = null;
             isDraggingB  = false;
+            waitingForLane = false;
+            laneOptions    = null;
+            laneCommitted  = false;
             car.pathFollower.t = 0;
 
             const levelData = LEVELS[currentLevelIndex];
@@ -1803,10 +1882,8 @@
                 }
             });
 
-            // Lane-choice level: show ↑/↓ hint arrows toward the two possible flags
-            const lanes = carLaneOptions[car.name];
-            if (lanes) showForkUI(lanes);
-            else clearForkUI();
+            // Arrows are NOT shown at the start - they appear at the fork (inside the turn)
+            clearForkUI();
         }
 
         function completeDrive() {
@@ -1826,7 +1903,7 @@
                 const carData  = levelData.cars.find(c => c.id === car.name);
                 const wrongDir = drivingDir;
                 drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0; drivingKey = null;
-                waitingForLane = false; laneOptions = null; clearForkUI();
+                waitingForLane = false; laneOptions = null; laneCommitted = false; clearForkUI();
                 car.disableInteractive();
                 gameScene.tweens.add({
                     targets: car, x: car.x + 8,
@@ -1868,7 +1945,7 @@
                     car.disableInteractive();
                     movedCars.add(car.name);
                     drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0; drivingKey = null;
-                waitingForLane = false; laneOptions = null; clearForkUI();
+                waitingForLane = false; laneOptions = null; laneCommitted = false; clearForkUI();
                     const levelData = LEVELS[currentLevelIndex];
                     const isLastCar = movedCars.size >= levelData.solution.length;
                     showCarSuccessPopup(isLastCar);
@@ -2032,6 +2109,8 @@
             isDraggingB = false;
             waitingForLane = false;
             laneOptions = null;
+            laneCommitted = false;
+            clearForkUI();
             levelData.cars.forEach(cd => {
                 const car = carsMap[cd.id];
                 if (!car) return;
