@@ -494,16 +494,16 @@
             .intro-box {
                 padding: 5px 16px; gap: 3px; border-radius: 14px; margin: auto; max-width: 640px;
             }
-            /* Landscape: use the wide space - 2 columns so logo+button stay visible without scrolling */
+            /* Landscape: 2 columns - orange panel on the RIGHT, subtitle+button on the LEFT */
             #intro-overlay .intro-box {
-                display: grid; max-width: 840px; width: 96%;
-                grid-template-columns: 1fr 1.25fr;
+                display: grid; max-width: 760px; width: 94%;
+                grid-template-columns: 1.2fr 1fr;
                 grid-template-areas:
-                    "logo logo"
-                    "road road"
-                    "sub  panel"
-                    "btn  panel";
-                column-gap: 16px; row-gap: 6px; align-items: center; padding: 8px 18px;
+                    "logo  logo"
+                    "road  road"
+                    "panel sub"
+                    "panel btn";
+                column-gap: 14px; row-gap: 4px; align-items: center; padding: 6px 30px 10px;
             }
             #intro-overlay .intro-logo   { grid-area: logo; }
             #intro-overlay .intro-road-wrap { grid-area: road; }
@@ -511,18 +511,18 @@
             #intro-overlay .how-to-panel    { grid-area: panel; align-self: stretch; }
             #intro-overlay .btn-primary     { grid-area: btn; justify-self: center; align-self: center; }
             .intro-logo { display: block; }
-            .intro-logo img { width: 86px; }
+            .intro-logo img { width: 76px; }
             .intro-partner-logo { width: 100px; }
             .intro-box h1 { font-size: 18px; }
-            .intro-road-wrap { padding: 5px 12px; min-height: 30px; }
-            .intro-road-title { font-size: 17px; }
-            .intro-car-icon { width: 30px; }
+            .intro-road-wrap { padding: 4px 12px; min-height: 28px; }
+            .intro-road-title { font-size: 16px; }
+            .intro-car-icon { width: 28px; }
             .intro-dest-marker { width: 44px; height: 30px; }
             .intro-dest-marker::before { width: 24px; height: 24px; margin: -12px 0 0 -12px; top: 68%; bottom: auto; }
             .intro-dest-flag { width: 50px; left: 8px; top: -31px; margin: 0; }
-            .intro-subtitle { font-size: 12px; line-height: 1.3; }
-            #intro-overlay .how-to-panel { font-size: 11px; line-height: 1.4; padding: 6px 12px; }
-            #intro-overlay .btn-primary { font-size: 13px; padding: 7px 18px; }
+            .intro-subtitle { font-size: 11px; line-height: 1.3; }
+            #intro-overlay .how-to-panel { font-size: 10px; line-height: 1.35; padding: 5px 10px; }
+            #intro-overlay .btn-primary { font-size: 12px; padding: 6px 16px; }
             #intro-text { font-size: 12px; line-height: 1.4; }
             #intro-text p { margin: 1px 0; }
 
