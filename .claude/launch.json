@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "CarGameGo",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "8001", "."],
+      "cwd": "/Users/shiratgoldstein/Library/CloudStorage/Dropbox/לקוחות/המפצחות/CarGameGo 2.0",
+      "port": 8001
+    }
+  ]
+}

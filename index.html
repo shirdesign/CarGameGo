@@ -1174,6 +1174,9 @@
             this.load.image('blue',   'images/blue.png');
             this.load.image('yellow', 'images/yellow.png');
             this.load.image('grey',   'images/grey.png');
+            this.load.image('orange',    'images/orange.png');
+            this.load.image('green',     'images/green.png');
+            this.load.image('turquoise', 'images/turqize.png');
         }
 
         // ==========================================
@@ -1585,7 +1588,7 @@
             }
 
             // Destination circles (correct + wrong destinations both shown - player doesn't know which is right)
-            const carColors = { red: 0xff3333, yellow: 0xffdd00, blue: 0x44aaff, grey: 0xaaaaaa };
+            const carColors = { red: 0xff3333, yellow: 0xffdd00, blue: 0x44aaff, grey: 0xaaaaaa, orange: 0xe8821e, green: 0x3bb34a, turquoise: 0x29c5e6 };
             const solutionDirMap = {};
             levelData.solution.forEach(s => { solutionDirMap[s.color] = s.direction; });
 
