@@ -94,6 +94,11 @@
             .intro-road-wrap { padding: 7px 0; }
             .intro-road-title { font-size: 18px; }
         }
+        /* Mobile portrait (only the intro is shown in portrait): keep the title on one line */
+        @media (max-width: 500px) and (orientation: portrait) {
+            .intro-road-title { font-size: 20px; letter-spacing: 0; white-space: nowrap; }
+            .intro-car-icon { width: 40px; }
+        }
         .intro-partner-logo { width: 130px; max-width: 40%; height: auto; display: block; margin: 0 auto; opacity: 0.92; }
         #intro-text { text-align: right; width: 100%; color: #444; font-size: 15px; line-height: 1.7; }
         #intro-text .placeholder { color: #999; font-style: italic; font-size: 13px; border: 1px dashed #ddd; padding: 10px; border-radius: 8px; margin-top: 6px; }
