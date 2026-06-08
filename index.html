@@ -58,7 +58,7 @@
         .intro-box {
             background:
                 linear-gradient(rgba(255,255,255,0.28), rgba(255,255,255,0.28)),
-                url('images/backgroundopening.png') center/cover no-repeat,
+                url('images/backgroundopening.png') center/100% 100% no-repeat,
                 #fdf6f1;
             border-radius: 28px; padding: 30px 34px 34px;
             max-width: 540px; width: 95%; text-align: center;
@@ -105,12 +105,12 @@
         .intro-car-icon { width: 46px; height: auto; flex-shrink: 0; transform: rotate(-90deg); }
         /* Destination marker - pulsing ring + flag, exactly like in-game */
         .intro-dest-marker {
-            position: relative; width: 54px; height: 54px; flex-shrink: 0;
+            position: relative; width: 66px; height: 66px; flex-shrink: 0;
             display: inline-flex; align-items: center; justify-content: center;
         }
         .intro-dest-marker::before {
             content: ''; position: absolute; left: 50%; top: 50%;
-            width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%;
+            width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%;
             border: 3px solid #F6B91A; background: rgba(246,185,26,0.3);
             animation: dest-pulse 1.5s ease-in-out infinite alternate;
         }
@@ -118,7 +118,7 @@
             from { transform: scale(1);    opacity: 1;    }
             to   { transform: scale(1.45); opacity: 0.35; }
         }
-        .intro-dest-flag { width: 34px; height: auto; position: relative; z-index: 1; }
+        .intro-dest-flag { width: 44px; height: auto; position: relative; z-index: 1; }
 
         /* --- Intro-only theming (does not affect in-game UI) --- */
         #intro-overlay .how-to-panel {
