@@ -217,6 +217,22 @@
             width: 320px; min-height: 200px; background: white;
             box-shadow: -5px 0 15px rgba(0,0,0,0.1); border-radius: 12px;
             overflow-y: auto; margin-right: 20px; display: flex; flex-direction: column;
+            scrollbar-width: thin; scrollbar-color: #F26D5C #fde8e3;
+        }
+        /* Always-visible scrollbar so it's clear there's more text to scroll */
+        #ui-layer::-webkit-scrollbar { width: 9px; }
+        #ui-layer::-webkit-scrollbar-track { background: #fde8e3; border-radius: 5px; }
+        #ui-layer::-webkit-scrollbar-thumb {
+            background: #F26D5C; border-radius: 5px; border: 2px solid #fde8e3;
+        }
+        #ui-layer::-webkit-scrollbar-thumb:hover { background: #d45845; }
+
+        /* Custom always-visible scroll indicator (works on mobile where native bars hide) */
+        #sb-scroll-thumb {
+            position: fixed; width: 7px; border-radius: 4px;
+            background: #F26D5C; z-index: 60; display: none;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.7);
+            transition: opacity 0.2s; pointer-events: none;
         }
 
         /* טאבלט ומטה: המשחק מוצמד לגובה, הסידבר ממלא את הרוחב שנשאר מימין */
@@ -673,6 +689,9 @@
         📱<br>סובבו את המכשיר לרוחב<br>כדי לשחק
     </div>
 
+    <!-- Custom scroll indicator for the right sidebar (always visible on mobile) -->
+    <div id="sb-scroll-thumb"></div>
+
     <div id="traffic-game-container">
         <div id="game-ui-row">
             <!-- ב-Inspect: בדקי על #game-container את data-bg-image ו-data-level-id כדי לראות איזו תמונת רקע מוצגת -->
@@ -1114,6 +1133,35 @@
 
         window.addEventListener('resize', adjustGameSize);
         window.addEventListener('orientationchange', () => setTimeout(adjustGameSize, 200));
+
+        // --- Custom scroll indicator for the right sidebar ---
+        function updateSidebarScrollbar() {
+            const ui = document.getElementById('ui-layer');
+            const thumb = document.getElementById('sb-scroll-thumb');
+            if (!ui || !thumb) return;
+            const overflow = ui.scrollHeight - ui.clientHeight;
+            if (overflow <= 6) { thumb.style.display = 'none'; return; }
+            const r = ui.getBoundingClientRect();
+            const pad = 6;
+            const trackH = r.height - pad * 2;
+            const thumbH = Math.max(30, trackH * (ui.clientHeight / ui.scrollHeight));
+            const t = ui.scrollTop / overflow;
+            thumb.style.display = 'block';
+            thumb.style.left = (r.right - 11) + 'px';
+            thumb.style.top  = (r.top + pad + (trackH - thumbH) * t) + 'px';
+            thumb.style.height = thumbH + 'px';
+        }
+        function bindSidebarScrollbar() {
+            const ui = document.getElementById('ui-layer');
+            if (ui && !ui._sbBound) {
+                ui._sbBound = true;
+                ui.addEventListener('scroll', updateSidebarScrollbar, { passive: true });
+            }
+            updateSidebarScrollbar();
+        }
+        window.addEventListener('resize', () => setTimeout(updateSidebarScrollbar, 50));
+        window.addEventListener('orientationchange', () => setTimeout(updateSidebarScrollbar, 250));
+        window.addEventListener('load', () => setTimeout(bindSidebarScrollbar, 100));
 
         // --- מנוע המשחק ---
         // ==========================================
@@ -1753,6 +1801,7 @@
 
             startPhaseSelect();
             showQuestionBubble(levelData);
+            if (typeof bindSidebarScrollbar === 'function') setTimeout(bindSidebarScrollbar, 60);
         }
 
         function createCar(scene, x, y, texture, name, angle) {
