@@ -116,10 +116,22 @@
         #intro-text .placeholder { color: #999; font-style: italic; font-size: 13px; border: 1px dashed #ddd; padding: 10px; border-radius: 8px; margin-top: 6px; }
         .intro-subtitle { font-size: 17px; font-weight: 600; color: #444; text-align: center; line-height: 1.5; margin: 0; }
         .intro-car-icon { width: 36px; height: auto; flex-shrink: 0; transform: rotate(-90deg); }
-        .intro-dest-dot {
-            width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-            border: 3px solid #F26D5C; background: rgba(242,109,92,0.3);
+        /* Destination marker - pulsing ring + flag, exactly like in-game */
+        .intro-dest-marker {
+            position: relative; width: 34px; height: 34px; flex-shrink: 0;
+            display: inline-flex; align-items: center; justify-content: center;
         }
+        .intro-dest-marker::before {
+            content: ''; position: absolute; left: 50%; top: 50%;
+            width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%;
+            border: 3px solid #F26D5C; background: rgba(242,109,92,0.3);
+            animation: dest-pulse 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes dest-pulse {
+            from { transform: scale(1);    opacity: 1;    }
+            to   { transform: scale(1.45); opacity: 0.35; }
+        }
+        .intro-dest-flag { width: 20px; height: auto; position: relative; z-index: 1; }
         .bubble-body { font-size: 14px; color: #555; line-height: 1.7; text-align: center; width: 100%; }
 
         /* --- Pre-question bubble --- */
@@ -531,7 +543,7 @@
             <div class="intro-road-wrap">
                 <img src="images/red.png" class="intro-car-icon" alt="">
                 <span class="intro-road-title">מי נכנס ראשון?!</span>
-                <div class="intro-dest-dot"></div>
+                <span class="intro-dest-marker"><img src="images/flag.png" class="intro-dest-flag" alt=""></span>
             </div>
             <p class="intro-subtitle">למדתם הכל על פניות וזכות קדימה,<br>הגיע הזמן לראות מה אתם יודעים</p>
             <div class="how-to-panel" style="width:100%; margin:0;">
@@ -608,6 +620,7 @@
             <div class="level-success-btns">
                 <button class="btn btn-secondary" onclick="closeLevelSuccessAndRetry()">נסו שוב</button>
                 <button class="btn btn-primary" id="level-success-next-btn" onclick="closeLevelSuccessAndNext()">לתרחיש הבא</button>
+                <button class="btn btn-primary" id="level-success-end-btn" style="display:none;" onclick="closeLevelSuccessAndEnd()">סיים משחק</button>
             </div>
         </div>
     </div>
@@ -1853,9 +1866,13 @@
             if (levelData.solutionImage) { img.src = levelData.solutionImage; img.style.display = 'block'; }
             else { img.style.display = 'none'; }
             const nextBtn = document.getElementById('level-success-next-btn');
+            const endBtn  = document.getElementById('level-success-end-btn');
             const isLast  = (currentLevelIndex === LEVELS.length - 1);
             nextBtn.style.display = isLast ? 'none' : 'block';
+            if (endBtn) endBtn.style.display = isLast ? 'block' : 'none';
             document.getElementById('level-success-popup').classList.add('show');
+            // On the last level: auto-advance to the end screen after a few seconds,
+            // unless the player clicks "סיים משחק" (or "נסו שוב") first.
             if (isLast) levelSuccessAutoTimer = setTimeout(() => {
                 levelSuccessAutoTimer = null;
                 document.getElementById('level-success-popup').classList.remove('show');
@@ -1866,6 +1883,11 @@
         function closeLevelSuccessAndNext() {
             document.getElementById('level-success-popup').classList.remove('show');
             nextLevel();
+        }
+        function closeLevelSuccessAndEnd() {
+            if (levelSuccessAutoTimer) { clearTimeout(levelSuccessAutoTimer); levelSuccessAutoTimer = null; }
+            document.getElementById('level-success-popup').classList.remove('show');
+            showEndScreen();
         }
         function closeLevelSuccessAndRetry() {
             if (levelSuccessAutoTimer) { clearTimeout(levelSuccessAutoTimer); levelSuccessAutoTimer = null; }
