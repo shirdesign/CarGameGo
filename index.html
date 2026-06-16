@@ -1323,11 +1323,15 @@
                     // Paused at the fork: drag toward the lane (flag) you want
                     if (waitingForLane) {
                         if (Math.sqrt(pdx*pdx + pdy*pdy) > 4) {
-                            let chosen = null, best = Infinity;
+                            let chosen = null, best = -Infinity;
                             for (const opt of [dragLaneData.up, dragLaneData.down]) {
                                 const ep = opt.path.getPoint(1);
-                                const d = Phaser.Math.Distance.Between(pointer.x, pointer.y, ep.x, ep.y);
-                                if (d < best) { best = d; chosen = opt; }
+                                if (!ep) continue;
+                                const dx = ep.x - drivingCar.x;
+                                const dy = ep.y - drivingCar.y;
+                                const len = Math.sqrt(dx*dx + dy*dy) || 1;
+                                const dot = (pdx * dx + pdy * dy) / len;
+                                if (dot > best) { best = dot; chosen = opt; }
                             }
                             if (chosen) {
                                 drivingPath = chosen.path; drivingDir = chosen.dir;
@@ -1342,11 +1346,15 @@
                     // Option A: allow re-selection while still near the fork
                     if (laneCommitted && drivingT < dragLaneData.forkT + 0.15) {
                         if (Math.sqrt(pdx*pdx + pdy*pdy) > 4) {
-                            let chosen = null, best = Infinity;
+                            let chosen = null, best = -Infinity;
                             for (const opt of [dragLaneData.up, dragLaneData.down]) {
                                 const ep = opt.path.getPoint(1);
-                                const d = Phaser.Math.Distance.Between(pointer.x, pointer.y, ep.x, ep.y);
-                                if (d < best) { best = d; chosen = opt; }
+                                if (!ep) continue;
+                                const dx = ep.x - drivingCar.x;
+                                const dy = ep.y - drivingCar.y;
+                                const len = Math.sqrt(dx*dx + dy*dy) || 1;
+                                const dot = (pdx * dx + pdy * dy) / len;
+                                if (dot > best) { best = dot; chosen = opt; }
                             }
                             if (chosen && chosen.path !== drivingPath) {
                                 drivingPath = chosen.path; drivingDir = chosen.dir;
