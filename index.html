@@ -1822,8 +1822,7 @@
             car.name = name;
             car.initialAngle = angle;
             car.angle = angle;
-            car.setInteractive(new Phaser.Geom.Circle(0, 0, 40), Phaser.Geom.Circle.Contains);
-            car.input.cursor = 'pointer';
+            car.setInteractive({ cursor: 'pointer', useHandCursor: true });
             car.pathFollower = { t: 0 };
             car.hasMoved = false;
 
@@ -1893,8 +1892,7 @@
                 const car = carsMap[cd.id];
                 if (car && !car.hasMoved) {
                     car.setTint(0xffffff);
-                    car.setInteractive(new Phaser.Geom.Circle(0, 0, 40), Phaser.Geom.Circle.Contains);
-                    car.input.cursor = 'pointer';
+                    car.setInteractive({ cursor: 'pointer', useHandCursor: true });
                 }
             });
         }
@@ -1943,8 +1941,7 @@
                 if (!c || c.hasMoved) return;
                 if (c === car) {
                     c.setTint(0x55ff55);
-                    c.setInteractive(new Phaser.Geom.Circle(0, 0, 40), Phaser.Geom.Circle.Contains);
-                    c.input.cursor = 'grab';
+                    c.setInteractive({ cursor: 'grab', useHandCursor: true });
                 } else {
                     c.setTint(0xaaaaaa);
                     c.disableInteractive();
@@ -1983,8 +1980,7 @@
                         if (carData) car.rotation = Phaser.Math.DegToRad(carData.angle);
                         car.pathFollower.t = 0;
                         car.setTint(0xffffff);
-                        car.setInteractive(new Phaser.Geom.Circle(0, 0, 40), Phaser.Geom.Circle.Contains);
-                        car.input.cursor = 'pointer';
+                        car.setInteractive({ cursor: 'pointer', useHandCursor: true });
                         const errText = (wrongDir && wrongDir.endsWith('_wrong'))
                             ? (levelData.errorText || 'נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.')
                             : 'נכנסתם לצומת בכיוון הלא נכון! נסו שוב, הפעם בכיוון הנכון.';
@@ -2020,9 +2016,9 @@
                     const isLastCar = movedCars.size >= levelData.solution.length;
                     showCarSuccessPopup(isLastCar);
                     if (isLastCar) {
-                        setTimeout(showLevelSuccess, 900);
+                        setTimeout(showLevelSuccess, 1400);
                     } else {
-                        setTimeout(startPhaseSelect, 650);
+                        setTimeout(startPhaseSelect, 1100);
                     }
                 }
             });
@@ -2119,7 +2115,7 @@
                 isLastCar ? 'סיימת את כל השלב!' : 'ממשיכים לרכב הבא...';
             const popup = document.getElementById('car-success-popup');
             popup.classList.add('show');
-            setTimeout(() => popup.classList.remove('show'), 750);
+            setTimeout(() => popup.classList.remove('show'), 1200);
         }
 
         // ==========================================
@@ -2190,8 +2186,7 @@
                 car.rotation = Phaser.Math.DegToRad(cd.angle);
                 if (car.pathFollower) car.pathFollower.t = 0;
                 car.setTint(0xffffff);
-                car.setInteractive(new Phaser.Geom.Circle(0, 0, 40), Phaser.Geom.Circle.Contains);
-                car.input.cursor = 'pointer';
+                car.setInteractive({ cursor: 'pointer', useHandCursor: true });
             });
             setTimeout(startPhaseSelect, 150);
         }
