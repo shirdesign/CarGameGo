@@ -1333,7 +1333,7 @@
                                 drivingPath = chosen.path; drivingDir = chosen.dir;
                                 drivingT = findClosestPointOnPath(chosen.path, drivingCar.x, drivingCar.y) ?? drivingT;
                                 laneCommitted = true; waitingForLane = false; laneOptions = null;
-                                clearForkUI();
+                                // keep forkUI visible until completeDrive clears it
                             }
                         }
                         return;
@@ -1614,7 +1614,7 @@
                     laneCommitted  = true;
                     waitingForLane = false;
                     laneOptions    = null;
-                    clearForkUI();
+                    // keep forkUI visible until completeDrive clears it
                     drivingKey     = key;
                     return;
                 }
