@@ -466,7 +466,7 @@
       {
         "id": "yellow",
         "texture": "yellow",
-        "x": 150,
+        "x": 379,
         "y": 558,
         "angle": 0
       }
@@ -497,13 +497,13 @@
       "yellow": {
         "left": {
           "type": "spline",
-          "start": [150, 559],
-          "points": [150, 270, 48, 264]
+          "start": [375, 559],
+          "points": [375, 270, 48, 264]
         },
         "left_wrong": {
           "type": "spline",
-          "start": [150, 564],
-          "points": [150, 350, 48, 344]
+          "start": [372, 564],
+          "points": [374, 350, 48, 344]
         }
       }
     },
