@@ -1339,6 +1339,22 @@
                         return;
                     }
 
+                    // Option A: allow re-selection while still near the fork
+                    if (laneCommitted && drivingT < dragLaneData.forkT + 0.15) {
+                        if (Math.sqrt(pdx*pdx + pdy*pdy) > 4) {
+                            let chosen = null, best = Infinity;
+                            for (const opt of [dragLaneData.up, dragLaneData.down]) {
+                                const ep = opt.path.getPoint(1);
+                                const d = Phaser.Math.Distance.Between(pointer.x, pointer.y, ep.x, ep.y);
+                                if (d < best) { best = d; chosen = opt; }
+                            }
+                            if (chosen && chosen.path !== drivingPath) {
+                                drivingPath = chosen.path; drivingDir = chosen.dir;
+                                drivingT = findClosestPointOnPath(chosen.path, drivingCar.x, drivingCar.y) ?? drivingT;
+                            }
+                        }
+                    }
+
                     // Before the fork: drive along the shared approach
                     if (!drivingPath) {
                         drivingPath = dragLaneData.up.path; drivingDir = dragLaneData.up.dir; drivingT = 0;
