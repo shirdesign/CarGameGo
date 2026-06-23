@@ -1,0 +1,2242 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>משחק הצמתים</title>
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        html { overflow-x: hidden; }     /* מונע גלילה אופקית - על html כדי שלא ישבש position:fixed במובייל */
+        body {
+            margin: 0; padding: 20px 0; background-color: #e0e0e0;
+            font-family: 'Varela Round', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; box-sizing: border-box;
+            touch-action: pan-y;         /* מאפשר גלילה אנכית בגוף הדף */
+        }
+
+        #traffic-game-container {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            width: 1200px; max-width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        #game-ui-row {
+            display: flex; flex-direction: row-reverse;
+            align-items: flex-start; justify-content: center;
+            width: 100%;
+        }
+
+        #rotate-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.92); color: white;
+            flex-direction: column; justify-content: center; align-items: center;
+            font-size: 28px; z-index: 9998; text-align: center; gap: 16px;
+        }
+
+        #game-container {
+            /* גודל נקבע בJS לפי גובה המסך */
+            width: 800px; height: 600px;
+            flex-shrink: 0;
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); background: #888; cursor: grab;
+            touch-action: none;
+        }
+
+        #game-container:active { cursor: grabbing; }
+
+        /* --- Intro overlay --- */
+        #intro-overlay {
+            display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: #f4efe8;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 10000; padding: 20px;
+        }
+        .intro-box {
+            background: url('images/backgroundopening.png') center/100% 100% no-repeat;
+            border-radius: 28px; padding: 30px 34px 34px;
+            max-width: 540px; width: 95%; text-align: center;
+            display: flex; flex-direction: column; gap: 16px; align-items: center;
+        }
+        .intro-box h1 { color: #F26D5C; margin: 0; font-size: 28px; }
+        .intro-logo { line-height: 1; }
+        .intro-logo img { width: 250px; max-width: 78%; height: auto; transform: none; }
+
+        /* --- כביש ואנימציית כותרת --- */
+        .intro-road-wrap {
+            width: 100%; overflow: visible; border-radius: 8px;
+            background: url('images/road.png') center/100% 100% no-repeat;
+            padding: 8px 14px; position: relative; min-height: 40px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        /* הטקסט הנוסע */
+        .intro-road-title {
+            display: block; text-align: center;
+            font-size: 27px; font-weight: bold;
+            color: #F6B91A; letter-spacing: 1px;
+            position: relative; z-index: 1;
+            animation: title-drive 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            -webkit-text-stroke: 0.6px #F6B91A;
+            margin-right: 10px;
+        }
+        @keyframes title-drive {
+            0%   { transform: translateX(140%); }
+            65%  { transform: translateX(-8%);  }
+            80%  { transform: translateX(3%);   }
+            90%  { transform: translateX(-2%);  }
+            100% { transform: translateX(0);    }
+        }
+        @media (max-height: 520px) {
+            .intro-road-wrap { padding: 7px 0; }
+            .intro-road-title { font-size: 18px; }
+        }
+        /* Mobile portrait (only the intro is shown in portrait): keep the title on one line */
+        @media (max-width: 500px) and (orientation: portrait) {
+            .intro-road-title { font-size: 20px; letter-spacing: 0; white-space: nowrap; }
+            .intro-car-icon { width: 40px; }
+        }
+        .intro-partner-logo { width: 130px; max-width: 40%; height: auto; display: block; margin: 0 auto; opacity: 0.92; }
+        #intro-text { text-align: right; width: 100%; color: #444; font-size: 15px; line-height: 1.7; }
+        #intro-text .placeholder { color: #999; font-style: italic; font-size: 13px; border: 1px dashed #ddd; padding: 10px; border-radius: 8px; margin-top: 6px; }
+        .intro-subtitle { font-size: 17px; font-weight: 600; color: #444; text-align: center; line-height: 1.5; margin: 0; }
+        .intro-car-icon { width: 46px; height: auto; flex-shrink: 0; transform: rotate(-90deg); }
+        /* Destination marker - pulsing ring + flag, exactly like in-game */
+        .intro-dest-marker {
+            position: relative; width: 52px; height: 40px; flex-shrink: 0;
+            display: inline-block; align-self: center; overflow: visible;
+        }
+        /* pulsing ring (like in-game) sitting on the flag's base circle, in front of the flag */
+        .intro-dest-marker::before {
+            content: ''; position: absolute; left: 50%; top: 88%;
+            width: 30px; height: 30px; margin: -30px 0 0 -15px; border-radius: 50%;
+            border: 3px solid #F6B91A; background: rgba(246,185,26,0.3);
+            animation: dest-pulse 1.5s ease-in-out infinite alternate; z-index: 2;
+        }
+        @keyframes dest-pulse {
+            from { transform: scale(1);    opacity: 1;    }
+            to   { transform: scale(1.45); opacity: 0.35; }
+        }
+        /* big flag, base circle aligned to the ring; body pokes above the thin band */
+        .intro-dest-flag {
+            position: absolute; left: 9px; top: -38px;
+            width: 64px; height: auto; z-index: 1;
+        }
+
+        /* --- Intro-only theming (does not affect in-game UI) --- */
+        #intro-overlay .how-to-panel {
+            background: #F26D5C; border: none; color: #fff;
+        }
+        #intro-overlay .how-to-panel strong { color: #fff; }
+        #intro-overlay .how-to-panel div { color: #fff; }
+        #intro-overlay .how-to-panel div[style*="color:#888"] { color: #ffe3dc !important; }
+        #intro-overlay .how-to-panel kbd {
+            background: #fff !important; color: #333 !important; border-color: #fff !important;
+        }
+        #intro-overlay .btn-primary,
+        #end-screen .btn-primary {
+            background: #1f2d3d; border-radius: 40px; padding: 14px 26px;
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        #intro-overlay .btn-primary:hover,
+        #end-screen .btn-primary:hover { background: #2c3e52; }
+        .intro-play-arrow {
+            display: inline-block; width: 0; height: 0;
+            border-top: 8px solid transparent; border-bottom: 8px solid transparent;
+            border-right: 12px solid #fff;   /* triangle pointing left (RTL) */
+        }
+        .bubble-body { font-size: 14px; color: #555; line-height: 1.7; text-align: center; width: 100%; }
+
+        /* --- Pre-question bubble --- */
+        #question-bubble {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.40); backdrop-filter: blur(3px);
+            justify-content: center; align-items: center; z-index: 9995;
+        }
+        #question-bubble.show { display: flex; }
+        .bubble-box {
+            background: white; border-radius: 20px; padding: 28px 32px;
+            max-width: 400px; width: 90%; text-align: center;
+            box-shadow: 0 16px 50px rgba(0,0,0,0.4);
+            border-top: 5px solid #F26D5C;
+            display: flex; flex-direction: column; gap: 12px; align-items: center;
+            animation: bubble-in 0.3s ease;
+        }
+        @keyframes bubble-in {
+            from { transform: scale(0.85); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+        .bubble-level-badge {
+            background: #F26D5C; color: white; font-size: 12px; font-weight: bold;
+            padding: 3px 14px; border-radius: 12px; letter-spacing: 0.5px;
+            display: block; width: fit-content; margin: 0 auto;
+        }
+        .bubble-text { font-size: 19px; font-weight: bold; color: #333; line-height: 1.4; }
+        .bubble-hint { font-size: 14px; color: #888; }
+
+        /* --- Success toast --- */
+        .success-toast {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.7);
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white; font-size: 28px; font-weight: bold;
+            padding: 18px 38px; border-radius: 20px; z-index: 9998;
+            pointer-events: none; opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            box-shadow: 0 8px 30px rgba(39,174,96,0.45);
+            text-align: center;
+        }
+
+        /* --- How-to panel inside right panel --- */
+        .how-to-panel {
+            background: #fff8f0; border-radius: 10px; padding: 12px 14px;
+            font-size: 13px; line-height: 1.9; color: #555;
+            border: 1px solid #fde8e3;
+        }
+        .how-to-panel strong { color: #F26D5C; display: block; margin-bottom: 2px; font-size: 14px; }
+
+        /* --- Swipe animation --- */
+        .swipe-demo {
+            display: flex; align-items: center; gap: 4px;
+            margin-top: 4px; direction: ltr; justify-content: center;
+        }
+        .swipe-hand {
+            display: inline-block; font-size: 20px;
+            animation: swipe-gesture 2s ease-in-out infinite;
+        }
+        @keyframes swipe-gesture {
+            0%, 100% { transform: translateX(0); opacity: 0.5; }
+            15%  { opacity: 1; transform: translateX(0); }
+            65%  { transform: translateX(-36px); opacity: 1; }
+            85%  { transform: translateX(-36px); opacity: 0; }
+        }
+
+        #ui-layer {
+            width: 320px; min-height: 200px; background: white;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1); border-radius: 12px;
+            overflow-y: auto; margin-right: 20px; display: flex; flex-direction: column;
+            scrollbar-width: none;        /* hide native bar - we use a custom one (#sb-scroll-thumb) */
+        }
+        #ui-layer::-webkit-scrollbar { width: 0; height: 0; }
+
+        /* Custom always-visible scroll indicator (works on mobile where native bars hide) */
+        #sb-scroll-thumb {
+            position: fixed; width: 7px; border-radius: 4px;
+            background: #F26D5C; z-index: 60; display: none;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.7);
+            transition: opacity 0.2s; pointer-events: none;
+        }
+
+        /* טאבלט ומטה: המשחק מוצמד לגובה, הסידבר ממלא את הרוחב שנשאר מימין */
+        @media (max-width: 1100px) {
+            body { align-items: flex-start; }
+            #traffic-game-container { width: 100%; max-width: 100%; padding: 0; }
+            /* שורת המשחק נשארת row - משחק + סידבר זה לצד זה */
+            #game-ui-row { align-items: stretch; }
+            #game-container { border-radius: 0; box-shadow: none; flex-shrink: 0; }
+            #ui-layer {
+                flex: 1;                     /* ממלא את כל הרוחב שנשאר */
+                width: auto; min-width: 0;
+                height: auto; min-height: unset;
+                margin-right: 0;
+                border-radius: 0; box-shadow: none;
+                border-right: 2px solid #eee;
+                overflow-y: auto;
+            }
+        }
+
+        /* מובייל קטן – כותרת ותוכן יותר קומפקטיים */
+        @media (max-width: 600px) {
+            .header { font-size: 15px; padding: 8px 12px; }
+            .content { padding: 8px 12px; font-size: 13px; }
+            .btn { font-size: 14px; padding: 9px; }
+            #solution-img { margin-top: 8px; }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #F26D5C 0%, #d45845 100%);
+            color: white; padding: 16px 20px; font-size: 22px; font-weight: bold;
+            text-align: center; letter-spacing: 0.5px;
+        }
+        .content { padding: 16px 20px; color: #333; font-size: 15px; line-height: 1.6; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+        /* כפתורים */
+        .btn {
+            display: block; width: 100%; padding: 11px 14px;
+            color: white; text-align: center;
+            border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+            cursor: pointer; transition: background 0.18s, transform 0.12s; margin-top: 0;
+            font-family: 'Varela Round', sans-serif;
+        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+
+        .btn-primary { background: #F26D5C; }
+        .btn-primary:hover { background: #d45845; }
+
+        .btn-secondary { background: #7f8c8d; }
+        .btn-secondary:hover { background: #636e72; }
+
+        .btn-rules {
+            background: #5C9830; font-size: 14px; padding: 9px 14px;
+        }
+        .btn-rules:hover { background: #4A7A24; }
+
+        .status-box { padding: 12px 14px; border-radius: 10px; text-align: center; font-weight: bold; display: none; font-size: 14px; }
+        .success { background-color: #eafaf1; color: #1e8449; border: 1px solid #a9dfbf; }
+        .error   { background-color: #fdf2f2; color: #d45845; border: 1px solid #f5c6cb; }
+
+        #solution-img { width: 100%; display: none; border-radius: 10px; border: 2px solid #eee; }
+
+        #buttons-container { display: none; flex-direction: column; gap: 8px; }
+
+        /* מסך סיום + קונפטי */
+        #end-screen {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: #f4efe8;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9997; text-align: center; padding: 20px;
+        }
+        #end-screen.show { display: flex; }
+        #end-screen .end-title {
+            color: #F26D5C; font-size: 30px; font-weight: bold; margin: 0;
+        }
+
+        .confetti-piece {
+            position: fixed; border-radius: 2px; pointer-events: none;
+            animation: confetti-fall linear forwards;
+        }
+        @keyframes confetti-fall {
+            0%   { transform: translateY(-60px) rotate(0deg) scale(1); opacity: 1; }
+            80%  { opacity: 1; }
+            100% { transform: translateY(105vh) rotate(900deg) scale(0.6); opacity: 0; }
+        }
+
+        /* הודעה כשנפתח ישירות מקובץ (file://) – CORS חוסם טעינת תמונות */
+        #file-protocol-msg {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: #1a1a1a; color: #fff;
+            flex-direction: column; justify-content: center; align-items: center;
+            padding: 40px; text-align: center; z-index: 9999;
+            font-family: 'Varela Round', sans-serif;
+        }
+        #file-protocol-msg.show { display: flex; }
+        #file-protocol-msg h2 { color: #F26D5C; margin-bottom: 20px; font-size: 28px; }
+        #file-protocol-msg p { max-width: 500px; line-height: 1.8; margin: 10px 0; font-size: 18px; }
+        #file-protocol-msg code { background: #333; padding: 8px 14px; border-radius: 8px; display: inline-block; margin: 15px 0; font-size: 16px; }
+
+        /* מסך שוטר */
+        #police-screen {
+            display: none; position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.50); backdrop-filter: blur(2px);
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9996;
+        }
+        #police-screen.show { display: flex; }
+        .police-box {
+            background: #fff; border-radius: 20px;
+            padding: 24px 24px 20px; max-width: 480px; width: 92%;
+            max-height: 90dvh; overflow-y: auto;
+            box-shadow: 0 16px 50px rgba(0,0,0,0.40);
+            border-top: 6px solid #F26D5C;
+            display: flex; flex-direction: row-reverse; gap: 20px; align-items: center;
+            animation: bubble-in 0.3s ease;
+        }
+        .police-officer-img {
+            width: 130px; height: auto; flex-shrink: 0;
+            border-radius: 10px; object-fit: cover;
+        }
+        .police-content {
+            display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0;
+        }
+        .police-content h2 { color: #F26D5C; margin: 0; font-size: 24px; }
+        .police-subtitle { color: #333; font-size: 15px; font-weight: bold; margin: 0; }
+        .police-content #police-error-text { color: #555; margin: 0; font-size: 14px; line-height: 1.4; }
+        .police-helper-text { font-size: 13px; color: #888; line-height: 1.5; border-top: 1px solid #f0f0f0; padding-top: 8px; margin: 0; }
+        @media (max-height: 520px) {
+            .police-box {
+                padding: 10px 14px; gap: 10px; border-radius: 14px;
+                max-width: 560px; align-items: center;
+            }
+            .police-officer-img { width: 60px; border-radius: 50%; }
+            .police-content h2 { font-size: 16px; }
+            .police-subtitle { font-size: 12px; }
+            .police-content #police-error-text { font-size: 12px; }
+            .police-helper-text { display: none; }
+            .police-content .btn { font-size: 12px; padding: 7px 10px; }
+        }
+
+        /* --- Car success popup (brief auto-close) --- */
+        #car-success-popup {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.30); backdrop-filter: blur(2px);
+            justify-content: center; align-items: center; z-index: 9997;
+            pointer-events: none;
+        }
+        #car-success-popup.show { display: flex; }
+        .car-success-box {
+            background: white; border-radius: 24px; padding: 32px 44px;
+            text-align: center; max-width: 300px;
+            box-shadow: 0 16px 50px rgba(0,0,0,0.30);
+            border-top: 6px solid #5C9830;
+            animation: bubble-in 0.25s ease;
+            display: flex; flex-direction: column; gap: 8px; align-items: center;
+        }
+        .car-success-icon { font-size: 56px; line-height: 1; }
+        .car-success-title { font-size: 32px; font-weight: bold; color: #5C9830; }
+        .car-success-sub { font-size: 15px; color: #888; }
+
+        /* --- Level success popup --- */
+        #level-success-popup {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.45); backdrop-filter: blur(3px);
+            justify-content: center; align-items: center; z-index: 9996;
+        }
+        #level-success-popup.show { display: flex; }
+        .level-success-box {
+            background: white; border-radius: 24px; padding: 24px 28px;
+            max-width: 520px; width: 92%; max-height: 90vh; overflow-y: auto;
+            text-align: center;
+            box-shadow: 0 16px 50px rgba(0,0,0,0.40);
+            border-top: 6px solid #5C9830;
+            animation: bubble-in 0.3s ease;
+            display: flex; flex-direction: column; gap: 12px; align-items: center;
+        }
+        .level-success-badge {
+            background: #5C9830; color: white; font-size: 12px; font-weight: bold;
+            padding: 3px 16px; border-radius: 12px; letter-spacing: 0.5px;
+        }
+        .level-success-title { font-size: 30px; font-weight: bold; color: #5C9830; margin: 0; }
+        .level-success-text {
+            font-size: 15px; color: #444; line-height: 1.7; text-align: right; width: 100%;
+            background: #f9fff5; border-radius: 10px; padding: 12px 14px;
+            border: 1px solid #d4edba; box-sizing: border-box;
+        }
+        #level-success-img { max-height: 180px; width: auto; max-width: 100%; border-radius: 10px; border: 2px solid #eee; display: none; }
+        .level-success-btns { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+
+        /* modal חוקי עזר */
+        #rules-modal {
+            display: none; position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.45); backdrop-filter: blur(3px);
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+        #rules-modal.show { display: flex; }
+        .modal-box {
+            background: #fff; border-radius: 16px; padding: 24px;
+            max-width: 420px; width: 90%; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.28);
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 14px; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0;
+        }
+        .modal-header h2 { color: #F26D5C; }
+        .close-btn {
+            background: #f0f0f0; border: none; font-size: 16px; cursor: pointer;
+            color: #555; padding: 5px 10px; border-radius: 8px; font-weight: bold;
+        }
+        .close-btn:hover { background: #ddd; }
+        #rules-list {
+            margin: 0; padding: 0 0 0 20px; line-height: 1.9;
+            font-size: 15px; color: #333;
+        }
+        #rules-list li { margin-bottom: 8px; }
+
+        /* --- Timer bar --- */
+        #timer-bar {
+            background: #fff8f0; padding: 8px 14px 6px;
+            border-bottom: 1px solid #fde8e3;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        #timer-display {
+            font-size: 20px; font-weight: bold; color: #F26D5C;
+            letter-spacing: 2px; font-variant-numeric: tabular-nums;
+        }
+        #timer-display.urgent { color: #cc0000; animation: timer-pulse 0.5s ease infinite alternate; }
+        @keyframes timer-pulse {
+            from { opacity: 1; transform: scale(1); }
+            to   { opacity: 0.6; transform: scale(1.05); }
+        }
+        #timer-progress-bg {
+            width: 100%; height: 6px; background: #fde8e3;
+            border-radius: 3px; overflow: hidden;
+        }
+        #timer-progress-fill {
+            height: 100%; background: #F26D5C; border-radius: 3px;
+            width: 100%; transition: width 1s linear, background 0.5s;
+        }
+
+        /* --- Mobile landscape (short viewport) --- */
+        @media (max-height: 520px) {
+            body { padding: 0; overflow: hidden; }
+            #traffic-game-container { padding: 0; }
+            #game-ui-row { height: 100vh; height: 100dvh; overflow: hidden; align-items: stretch; }
+            #ui-layer {
+                min-width: 140px; max-width: 210px;
+                height: 100vh; height: 100dvh;
+                overflow-y: auto;
+            }
+            .header { font-size: 13px; padding: 6px 10px; }
+            #timer-bar { padding: 4px 8px 3px; }
+            #timer-display { font-size: 15px; letter-spacing: 1px; }
+            #timer-progress-bg { height: 4px; }
+            .content { padding: 6px 10px; font-size: 12px; gap: 6px; }
+            /* מסתיר את פאנל "איך משחקים?" - מספיק שמופיע במסך הפתיחה */
+            .content > .how-to-panel { display: none; }
+            .btn { font-size: 12px; padding: 7px 10px; border-radius: 8px; }
+            #ui-instructions { font-size: 12px; line-height: 1.5; }
+        }
+
+        /* --- כל המסכים/מודאלים: landscape קטן --- */
+        @media (max-height: 520px) {
+            /* מסך פתיחה */
+            #intro-overlay { align-items: center; overflow-y: auto; padding: 8px; }
+            .intro-box {
+                padding: 5px 16px; gap: 3px; border-radius: 14px; margin: auto; max-width: 640px;
+            }
+            /* Landscape: 2 columns - orange panel on the RIGHT, subtitle+button on the LEFT */
+            #intro-overlay .intro-box {
+                display: grid; max-width: 760px; width: 94%;
+                grid-template-columns: 1.2fr 1fr;
+                grid-template-areas:
+                    "logo  logo"
+                    "road  road"
+                    "panel sub"
+                    "panel btn";
+                column-gap: 14px; row-gap: 4px; align-items: center; padding: 6px 30px 10px;
+            }
+            #intro-overlay .intro-logo   { grid-area: logo; }
+            #intro-overlay .intro-road-wrap { grid-area: road; }
+            #intro-overlay .intro-subtitle  { grid-area: sub; }
+            #intro-overlay .how-to-panel    { grid-area: panel; align-self: stretch; }
+            #intro-overlay .btn-primary     { grid-area: btn; justify-self: center; align-self: center; }
+            .intro-logo { display: block; }
+            .intro-logo img { width: 76px; }
+            .intro-partner-logo { width: 100px; }
+            .intro-box h1 { font-size: 18px; }
+            .intro-road-wrap { padding: 4px 12px; min-height: 28px; }
+            .intro-road-title { font-size: 16px; }
+            .intro-car-icon { width: 28px; }
+            .intro-dest-marker { width: 44px; height: 30px; }
+            .intro-dest-marker::before { width: 24px; height: 24px; margin: -24px 0 0 -12px; top: 85%; bottom: auto; }
+            .intro-dest-flag { width: 50px; left: 8px; top: -31px; margin: 0; }
+            .intro-subtitle { font-size: 11px; line-height: 1.3; }
+            #intro-overlay .how-to-panel { font-size: 10px; line-height: 1.35; padding: 5px 10px; }
+            #intro-overlay .btn-primary { font-size: 12px; padding: 6px 16px; }
+            #intro-text { font-size: 12px; line-height: 1.4; }
+            #intro-text p { margin: 1px 0; }
+
+            /* בועת שאלה לפני כל שלב */
+            .bubble-box {
+                padding: 12px 20px; gap: 6px; border-radius: 14px;
+                max-height: 88dvh; overflow-y: auto;
+                flex-direction: row; flex-wrap: wrap; align-items: center;
+            }
+            .bubble-text { font-size: 15px; flex: 1 1 100%; }
+            .bubble-hint { font-size: 12px; flex: 1 1 100%; }
+
+            /* פופ-אפ הצלחת רכב בודד */
+            .car-success-box {
+                padding: 12px 24px; gap: 4px; border-radius: 14px;
+                flex-direction: row; align-items: center; max-width: 400px;
+            }
+            .car-success-icon { font-size: 36px; }
+            .car-success-title { font-size: 22px; }
+            .car-success-sub { font-size: 13px; }
+
+            /* פופ-אפ הצלחת שלב */
+            .level-success-box {
+                padding: 10px 14px; gap: 6px;
+                flex-direction: row; flex-wrap: wrap; align-items: flex-start;
+                max-width: 600px;
+            }
+            .level-success-badge, .level-success-title {
+                flex: 1 1 100%;
+            }
+            .level-success-title { font-size: 20px; }
+            .level-success-text { font-size: 12px; padding: 6px 8px; line-height: 1.4; flex: 1 1 100%; }
+            /* תמונה וכפתורים זה לצד זה */
+            #level-success-img { max-height: 120px; width: auto; flex: 0 0 auto; }
+            .level-success-btns {
+                flex: 1 1 120px; flex-direction: column; gap: 6px;
+                align-self: center;
+            }
+            .level-success-btns .btn { font-size: 12px; padding: 8px 10px; }
+        }
+
+        /* טאבלט בינוני - הקטן קצת */
+        @media (max-height: 700px) and (min-height: 521px) {
+            #timer-display { font-size: 17px; }
+            .content { font-size: 14px; gap: 8px; }
+            .how-to-panel { font-size: 12px; padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="file-protocol-msg">
+        <h2>⚠️ המשחק לא יכול לרוץ מכאן</h2>
+        <p>הדף נפתח ישירות מקובץ, ולכן הדפדפן חוסם טעינת התמונות (שגיאות CORS).</p>
+        <p><strong>פתרון:</strong> להריץ שרת מקומי ולהיכנס דרך הדפדפן לכתובת:</p>
+        <code>http://localhost:8000/index.html</code>
+        <p>בטרמינל, מתוך תיקיית המשחק (CarGameGo), הרצתי:</p>
+        <code>python3 server.py</code>
+        <p>ואז פתחי את הקישור למעלה בדפדפן.</p>
+    </div>
+
+    <!-- מסך פתיחה -->
+    <div id="intro-overlay">
+        <div class="intro-box">
+            <div class="intro-logo"><img src="images/logo.png" alt="על ההגה"></div>
+            <div class="intro-road-wrap">
+                <img src="images/yellow.png" class="intro-car-icon" alt="">
+                <span class="intro-road-title">מי נכנס ראשון?!</span>
+                <span class="intro-dest-marker"><img src="images/flag.png" class="intro-dest-flag" alt=""></span>
+            </div>
+            <p class="intro-subtitle">למדתם הכל על פניות וזכות קדימה,<br>הגיע הזמן לראות מה אתם יודעים</p>
+            <div class="how-to-panel" style="width:100%; margin:0;">
+                <strong>איך משחקים?</strong>
+                <div>שלב א׳ - בוחרים את הרכב שתורו לנסוע, לפי זכויות הקדימה</div>
+                <div>שלב ב׳ - <span style="font-weight:700;">כוונו</span> או <span style="font-weight:700;">גררו</span> את הרכב לנקודת היעד שלו, המסומנת בצבע הרכב</div>
+                <div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
+                    <div><span style="font-weight:700;">כוונו</span> - בעזרת החצים במקלדת
+                        <span style="display:inline-flex; gap:2px; margin-right:4px; vertical-align:middle;">
+                            <kbd style="background:#eee;border:1px solid #bbb;border-radius:4px;padding:1px 5px;font-size:11px;font-family:monospace;">←</kbd>
+                            <kbd style="background:#eee;border:1px solid #bbb;border-radius:4px;padding:1px 5px;font-size:11px;font-family:monospace;">→</kbd>
+                            <kbd style="background:#eee;border:1px solid #bbb;border-radius:4px;padding:1px 5px;font-size:11px;font-family:monospace;">↑</kbd>
+                            <kbd style="background:#eee;border:1px solid #bbb;border-radius:4px;padding:1px 5px;font-size:11px;font-family:monospace;">↓</kbd>
+                        </span>
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <span style="font-weight:700;">גררו</span> - עם האצבע או הסמן על המסך
+                        <span class="swipe-hand" style="font-size:18px; display:inline-block;">👆</span>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="width:auto; min-width:240px; font-size:15px; margin-top:4px; line-height:1.4;" onclick="closeIntro()"><span>חושבים שאתם מוכנים?!<br>התחילו לשחק!</span><span class="intro-play-arrow"></span></button>
+        </div>
+    </div>
+
+    <!-- מסך סיום -->
+    <div id="end-screen">
+        <div class="intro-box">
+            <div class="intro-logo"><img src="images/logo.png" alt="על ההגה"></div>
+            <div class="intro-road-wrap">
+                <img src="images/yellow.png" class="intro-car-icon" alt="">
+                <span class="intro-road-title">כל הכבוד!</span>
+                <span class="intro-dest-marker"><img src="images/flag.png" class="intro-dest-flag" alt=""></span>
+            </div>
+            <p class="intro-subtitle">הגעתם לסוף המסלול!<br>סיימתם את כל השלבים בהצלחה</p>
+            <button class="btn btn-primary" style="width:auto; min-width:240px; font-size:15px; margin-top:4px; line-height:1.4;" onclick="restartGame()"><span>שחקו שוב מההתחלה</span><span class="intro-play-arrow"></span></button>
+        </div>
+    </div>
+
+    <!-- מסך שוטר -->
+    <div id="police-screen">
+        <div class="police-box">
+            <img src="images/police-officer.png" alt="שוטר" class="police-officer-img">
+            <div class="police-content">
+                <h2>עצרו בצד!</h2>
+                <p class="police-subtitle">עברתם על החוק</p>
+                <p id="police-error-text"></p>
+                <button class="btn btn-primary" onclick="retryCurrentCar()" style="pointer-events:auto;">נסו שוב</button>
+                <button class="btn btn-rules" onclick="showRulesFromPolice()">חוקי עזר</button>
+                <p class="police-helper-text">רוצים לחשב את הפתרון לפני שאתם מנסים שנית? עברו שוב על חוקי העזר ודייקו את תשובתכם</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- בועת שאלה -->
+    <div id="question-bubble" onclick="closeQuestionBubble()">
+        <div class="bubble-box" onclick="event.stopPropagation()">
+            <div class="bubble-level-badge" id="bubble-level-badge">תרחיש מס' 1</div>
+            <div class="bubble-text" id="bubble-text"></div>
+            <div class="bubble-body" id="bubble-body"></div>
+            <button class="btn btn-primary" style="max-width:180px; margin:4px auto 0;" onclick="closeQuestionBubble()">בואו נתחיל!</button>
+        </div>
+    </div>
+
+    <!-- פופאפ הצלחת רכב בודד (מצוין!) -->
+    <div id="car-success-popup">
+        <div class="car-success-box">
+            <div class="car-success-title">מצוין!</div>
+            <div class="car-success-sub" id="car-success-sub">ממשיכים לרכב הבא...</div>
+        </div>
+    </div>
+
+    <!-- פופאפ סיום שלב -->
+    <div id="level-success-popup">
+        <div class="level-success-box">
+            <div class="level-success-badge" id="level-success-badge">תרחיש מס' 1</div>
+            <div class="level-success-title">כל הכבוד!</div>
+            <div class="level-success-text" id="level-success-text"></div>
+            <img id="level-success-img" alt="Solution">
+            <div class="level-success-btns">
+                <button class="btn btn-secondary" onclick="closeLevelSuccessAndRetry()">נסו שוב</button>
+                <button class="btn btn-primary" id="level-success-next-btn" onclick="closeLevelSuccessAndNext()">לתרחיש הבא</button>
+                <button class="btn btn-primary" id="level-success-end-btn" style="display:none;" onclick="closeLevelSuccessAndEnd()">סיים משחק</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- modal חוקי עזר -->
+    <div id="rules-modal" onclick="closeRulesModal()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 style="margin:0; font-size:20px;">חוקי תעבורה התקפים לתרחיש</h2>
+                <button class="close-btn" onclick="closeRulesModal()">✕</button>
+            </div>
+            <p id="rules-intro" style="font-size:14px; color:#888; font-style:italic; margin:0 0 12px 0; line-height:1.5; display:none;"></p>
+            <ul id="rules-list"></ul>
+        </div>
+    </div>
+
+    <div id="rotate-overlay">
+        📱<br>סובבו את המכשיר לרוחב<br>כדי לשחק
+    </div>
+
+    <!-- Custom scroll indicator for the right sidebar (always visible on mobile) -->
+    <div id="sb-scroll-thumb"></div>
+
+    <div id="traffic-game-container">
+        <div id="game-ui-row">
+            <!-- ב-Inspect: בדקי על #game-container את data-bg-image ו-data-level-id כדי לראות איזו תמונת רקע מוצגת -->
+            <div id="game-container"></div>
+
+            <div id="ui-layer">
+                <div class="header" id="level-title">
+                    שאלה
+                </div>
+                <div id="timer-bar">
+                    <div id="timer-display">⏱ 01:00</div>
+                    <div id="timer-progress-bg"><div id="timer-progress-fill"></div></div>
+                </div>
+                <div class="content">
+                    <p id="ui-instructions">טוען...</p>
+
+                    <button class="btn btn-rules" onclick="showRulesModal()">חוקי עזר</button>
+
+                    <div id="status-msg" class="status-box"></div>
+                    <!-- ב-Inspect: אחרי סיום שלב בדקי ב-#solution-img את ה־src לראות איזו תמונת פתרון מוצגת -->
+                    <img id="solution-img" alt="Solution">
+
+                    <div id="buttons-container">
+                        <button class="btn btn-secondary" id="retry-btn" onclick="initLevel()">נסו שוב</button>
+                        <button class="btn btn-primary"   id="next-btn"  onclick="nextLevel()">לתרחיש הבא</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // אם הדף נפתח כ־file:// – הצג הודעה (CORS חוסם תמונות)
+        if (window.location.protocol === 'file:') {
+            document.getElementById('file-protocol-msg').classList.add('show');
+        }
+
+        // זיהוי מובייל: אם מסך פורטרט – הצג הנחיה לסובב
+        function checkOrientation() {
+            const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const overlay = document.getElementById('rotate-overlay');
+            if (isMobile && window.innerHeight > window.innerWidth) {
+                overlay.style.display = 'flex';
+            } else {
+                overlay.style.display = 'none';
+            }
+        }
+        window.addEventListener('resize', checkOrientation);
+        window.addEventListener('orientationchange', checkOrientation);
+        checkOrientation();
+    </script>
+    <script>
+        // ==========================================
+        //         הגדרת השלבים
+        // ==========================================
+        // שלבים ברירת מחדל
+        const DEFAULT_LEVELS = [
+            {
+                id: 1,
+                instruction: "<strong>מי נכנס ראשון לצומת, ומי האחרון??</strong><br>לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.<br>בחרו את הרכבים הנכונים לנסיעה לפי הסדר בה מגיעה להם זכות הקדימה,<br>כל פעם רכב אחד לפי התור!<br>לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות.<br>שימו לב למאפייני הכביש והצומת!<br><br>-טעית ולא זיהית מי יוצא ראשון??<br>-לא נסעת אל היעד בדרך הנכונה??<br>-עברה דקה והצומת עדיין לא פנויה??<br><strong>עברת על החוק, והמשטרה הגיעה!</strong><br><strong>עליך להתחיל מהתחלה!</strong>",
+                errorText: "נכנסתם לצומת בסדר הלא נכון! נסו שוב, הפעם לפי סדר זכות הקדימה.",
+                solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, נותן זכות קדימה לרכב הבא ממול ולרכב הבא מימין. הרכב הכחול נותן זכות קדימה לבא מימין. ולכן הרכב האדום נכנס ראשון לצומת",
+                bgImage: "images/background1.png",
+                solutionImage: "images/solution1.png",
+
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                    { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                ],
+
+                paths: {
+                    red: {
+                        straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                    },
+                    yellow: {
+                        straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                        right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                    },
+                    blue: {
+                        straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                        left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                    }
+                },
+
+                solution: [
+                    { color: 'red', direction: 'straight' },
+                    { color: 'blue', direction: 'straight' },
+                    { color: 'yellow', direction: 'left' }
+                ],
+                bubbleText: 'אז מי נכנס ראשון, ומי אחרון?!',
+                bubbleBody: 'לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.\nכוונו או גררו את כל המכוניות אל היעד שלהן, בסדר הנכון לפי זכות הקדימה!\nחוקי העזר הרלוונטיים מחכים לכם פה בצד ימין.\nשימו לב, אתם על זמן!',
+                rules: ['בצומת ללא תמרורים: כל נהג נותן זכות קדימה לבא מימינו.', 'בפנייה שמאלה: יש לתת זכות קדימה גם לבא מימין וגם לבא ממול.']
+            },
+            {
+                id: 2,
+                instruction: "<strong>מי נכנס ראשון לצומת, ומי האחרון??</strong><br>לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.<br>בחרו את הרכבים הנכונים לנסיעה לפי הסדר בה מגיעה להם זכות הקדימה,<br>כל פעם רכב אחד לפי התור!<br>לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות.<br>שימו לב למאפייני הכביש והצומת!<br><br>-טעית ולא זיהית מי יוצא ראשון??<br>-לא נסעת אל היעד בדרך הנכונה??<br>-עברה דקה והצומת עדיין לא פנויה??<br><strong>עברת על החוק, והמשטרה הגיעה!</strong><br><strong>עליך להתחיל מהתחלה!</strong>",
+                errorText: "נכנסתם לצומת בסדר הלא נכון! נסו שוב, הפעם לפי סדר זכות הקדימה.",
+                solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, נותן זכות קדימה לרכב הבא ממול ולרכב הבא מימין. הרכב הכחול נותן זכות קדימה לבא מימין. ולכן הרכב האדום נכנס ראשון לצומת",
+                bgImage: "images/background2.png",
+                solutionImage: "images/solution2.png",
+
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                    { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                ],
+
+                paths: {
+                    red: {
+                        straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                    },
+                    yellow: {
+                        straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                        right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                    },
+                    blue: {
+                        straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                        left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                    }
+                },
+
+                solution: [
+                    { color: 'red', direction: 'straight' },
+                    { color: 'blue', direction: 'straight' },
+                    { color: 'yellow', direction: 'left' }
+                ],
+                bubbleText: 'אז מי נכנס ראשון, ומי אחרון?!',
+                bubbleBody: 'לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.\nכוונו או גררו את כל המכוניות אל היעד שלהן, בסדר הנכון לפי זכות הקדימה!\nחוקי העזר הרלוונטיים מחכים לכם פה בצד ימין.\nשימו לב, אתם על זמן!',
+                rules: ['בצומת ללא תמרורים: כל נהג נותן זכות קדימה לבא מימינו.', 'בפנייה שמאלה: יש לתת זכות קדימה גם לבא מימין וגם לבא ממול.']
+            },
+            {
+                id: 3,
+                instruction: "<strong>מי נכנס ראשון לצומת, ומי האחרון??</strong><br>לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.<br>בחרו את הרכבים הנכונים לנסיעה לפי הסדר בה מגיעה להם זכות הקדימה,<br>כל פעם רכב אחד לפי התור!<br>לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות.<br>שימו לב למאפייני הכביש והצומת!<br><br>-טעית ולא זיהית מי יוצא ראשון??<br>-לא נסעת אל היעד בדרך הנכונה??<br>-עברה דקה והצומת עדיין לא פנויה??<br><strong>עברת על החוק, והמשטרה הגיעה!</strong><br><strong>עליך להתחיל מהתחלה!</strong>",
+                errorText: "נכנסתם לצומת בסדר הלא נכון! נסו שוב, הפעם לפי סדר זכות הקדימה.",
+                solutionText: "נכון מאוד! המשאית, המעוניינת לנסוע ישר, צריכה לתת זכות קדימה לרכב הבא מימין. ולכן הרכב הכחול נכנס ראשון לצומת",
+                bgImage: "images/background3.png",
+                solutionImage: "images/solution3.png",
+
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                    { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                ],
+
+                paths: {
+                    red: {
+                        straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                    },
+                    yellow: {
+                        straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                        right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                    },
+                    blue: {
+                        straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                        left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                    }
+                },
+
+                solution: [
+                    { color: 'blue', direction: 'straight' },
+                    { color: 'red', direction: 'straight' },
+                    { color: 'yellow', direction: 'straight' }
+                ],
+                bubbleText: 'אז מי נכנס ראשון, ומי אחרון?!',
+                bubbleBody: 'לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.\nכוונו או גררו את כל המכוניות אל היעד שלהן, בסדר הנכון לפי זכות הקדימה!\nחוקי העזר הרלוונטיים מחכים לכם פה בצד ימין.\nשימו לב, אתם על זמן!',
+                rules: ['בצומת ללא תמרורים: כל נהג נותן זכות קדימה לבא מימינו.', 'בפנייה שמאלה: יש לתת זכות קדימה גם לבא מימין וגם לבא ממול.']
+            },
+            {
+                id: 4,
+                instruction: "<strong>מי נכנס ראשון לצומת, ומי האחרון??</strong><br>לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.<br>בחרו את הרכבים הנכונים לנסיעה לפי הסדר בה מגיעה להם זכות הקדימה,<br>כל פעם רכב אחד לפי התור!<br>לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות.<br>שימו לב למאפייני הכביש והצומת!<br><br>-טעית ולא זיהית מי יוצא ראשון??<br>-לא נסעת אל היעד בדרך הנכונה??<br>-עברה דקה והצומת עדיין לא פנויה??<br><strong>עברת על החוק, והמשטרה הגיעה!</strong><br><strong>עליך להתחיל מהתחלה!</strong>",
+                errorText: "נכנסתם לצומת בסדר הלא נכון! נסו שוב, הפעם לפי סדר זכות הקדימה.",
+                solutionText: "נכון מאוד! הרכב הצהוב, המעוניין לפנות שמאלה, צריך לתת זכות קדימה לרכב הבא מימין. לכן הרכב הכחול נכנס ראשון לצומת",
+                bgImage: "images/background4.png",
+                solutionImage: "images/solution4.png",
+
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                    { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                ],
+
+                paths: {
+                    red: {
+                        straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                    },
+                    yellow: {
+                        straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                        right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                    },
+                    blue: {
+                        straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                        left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                    }
+                },
+
+                solution: [
+                    { color: 'blue', direction: 'straight' },
+                    { color: 'yellow', direction: 'left' },
+                    { color: 'red', direction: 'straight' }
+                ],
+                bubbleText: 'אז מי נכנס ראשון, ומי אחרון?!',
+                bubbleBody: 'לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.\nכוונו או גררו את כל המכוניות אל היעד שלהן, בסדר הנכון לפי זכות הקדימה!\nחוקי העזר הרלוונטיים מחכים לכם פה בצד ימין.\nשימו לב, אתם על זמן!',
+                rules: ['בצומת ללא תמרורים: כל נהג נותן זכות קדימה לבא מימינו.', 'בפנייה שמאלה: יש לתת זכות קדימה גם לבא מימין וגם לבא ממול.']
+            },
+            {
+                id: 5,
+                instruction: "<strong>מי נכנס ראשון לצומת, ומי האחרון??</strong><br>לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.<br>בחרו את הרכבים הנכונים לנסיעה לפי הסדר בה מגיעה להם זכות הקדימה,<br>כל פעם רכב אחד לפי התור!<br>לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות.<br>שימו לב למאפייני הכביש והצומת!<br><br>-טעית ולא זיהית מי יוצא ראשון??<br>-לא נסעת אל היעד בדרך הנכונה??<br>-עברה דקה והצומת עדיין לא פנויה??<br><strong>עברת על החוק, והמשטרה הגיעה!</strong><br><strong>עליך להתחיל מהתחלה!</strong>",
+                errorText: "נכנסתם לצומת בסדר הלא נכון! נסו שוב, הפעם לפי סדר זכות הקדימה.",
+                solutionText: "נכון מאוד! לרכב האדום יש תמרור 'תן זכות קדימה', לכן הוא חייב לתת זכות קדימה לכל מי שרוצה להכנס לצומת לפניו. ולכן הרכב הצהוב נכנס ראשון לצומת",
+                bgImage: "images/background5.png",
+                solutionImage: "images/solution5.png",
+
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 },
+                    { id: 'blue', texture: 'blue', x: 400, y: 0, angle: 180 }
+                ],
+
+                paths: {
+                    red: {
+                        straight: { type: 'line', start: [400, 600], end: [400, 0] },
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 600], p1: [400, 500], end: [800, 500] }
+                    },
+                    yellow: {
+                        straight: { type: 'line', start: [800, 300], end: [0, 300] },
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 400, 600] },
+                        right: { type: 'curve', start: [800, 300], p1: [600, 300], end: [400, 0] }
+                    },
+                    blue: {
+                        straight: { type: 'line', start: [400, 0], end: [400, 600] },
+                        left: { type: 'spline', start: [400, 0], points: [400, 150, 400, 250, 350, 300, 200, 300, 0, 300] },
+                        right: { type: 'curve', start: [400, 0], p1: [400, 100], end: [800, 100] }
+                    }
+                },
+
+                solution: [
+                    { color: 'yellow', direction: 'straight' },
+                    { color: 'red', direction: 'straight' },
+                    { color: 'blue', direction: 'straight' }
+                ],
+                bubbleText: 'אז מי נכנס ראשון, ומי אחרון?!',
+                bubbleBody: 'לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.\nכוונו או גררו את כל המכוניות אל היעד שלהן, בסדר הנכון לפי זכות הקדימה!\nחוקי העזר הרלוונטיים מחכים לכם פה בצד ימין.\nשימו לב, אתם על זמן!',
+                rules: ["בצומת עם תמרורים: הרכב שמקבל תמרור 'תן זכות קדימה' ייתן זכות קדימה לתנועה שחוצה את דרכו.", 'הרכב יעבור רק אחרי שהדרך פנויה לחלוטין.']
+            },
+            {
+                id: 6,
+                instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל. לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
+                errorText: "נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                solutionText: "נכון מאוד! הרכב הצהוב פונה מחד סטרי אל חד סטרי, לכן הוא יצמד לשמאל ויפנה מהנתיב השמאלי אל הנתיב השמאלי. הרכב האדום פונה מדו סטרי אל דו סטרי, לכן יפנה שמאלה בהצמדות לימין, מהנתיב הימני אל הנתיב הימני.",
+                bgImage: "images/background6.png",
+                solutionImage: "images/solution6.png",
+
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 }
+                ],
+
+                paths: {
+                    red: {
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 320] },
+                        left_wrong: { type: 'spline', start: [400, 600], points: [400, 450, 390, 340, 340, 260, 200, 245, 0, 240] }
+                    },
+                    yellow: {
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 420, 600] },
+                        left_wrong: { type: 'spline', start: [800, 300], points: [600, 300, 440, 295, 395, 350, 355, 450, 320, 600] }
+                    }
+                },
+
+                solution: [
+                    { color: 'red', direction: 'left' },
+                    { color: 'yellow', direction: 'left' }
+                ],
+                bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
+                bubbleBody: 'לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.\nכוונו או גררו את הרכבים אל הנתיב הנכון!\nשימו לב למאפייני הכביש והצומת.\nשימו לב, אתם על זמן!',
+                rules: ['רכב היוצא מכביש חד סטרי: ייצא מהנתיב השמאלי.', 'רכב הנכנס לכביש חד סטרי: ייכנס לנתיב השמאלי.', 'רכב היוצא מכביש דו סטרי: ייצא מהנתיב הימני.', 'רכב הנכנס לכביש דו סטרי: ייכנס לנתיב הימני.', 'רכב היוצא מכביש חד סטרי עם שטח הפרדה בנוי: ייצא מהנתיב השמאלי שבכיוון נסיעתו.', 'רכב הנכנס לכביש חד סטרי עם שטח הפרדה בנוי: ייכנס לנתיב השמאלי שבכיוון נסיעתו.']
+            },
+            {
+                id: 7,
+                instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל. לפניך 2 רכבים שרוצים לפנות שמאלה מכבישים שונים אל כבישים שונים. שים לב אל מאפייני הכביש ופנה עם הרכבים אל נקודת היעד הנכונה מבין הנקודות. יש לך דקה לבצע את הפניה, בלי טעויות ובלי תאונות!",
+                errorText: "נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                solutionText: "נכון מאוד! הרכב הצהוב פונה מדו סטרי אל דו סטרי, לכן יפנה שמאלה בהצמדות לימין, מהנתיב הימני אל הנתיב הימני. הרכב האדום פונה מדו סטרי אל חד סטרי, לכן יפנה מהנתיב הימני אל הנתיב השמאלי.",
+                bgImage: "images/background7.png",
+                solutionImage: "images/solution7.png",
+
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 }
+                ],
+
+                paths: {
+                    red: {
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 320] },
+                        left_wrong: { type: 'spline', start: [400, 600], points: [400, 450, 390, 340, 340, 260, 200, 245, 0, 240] }
+                    },
+                    yellow: {
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 420, 600] },
+                        left_wrong: { type: 'spline', start: [800, 300], points: [600, 300, 440, 295, 395, 350, 355, 450, 320, 600] }
+                    }
+                },
+
+                solution: [
+                    { color: 'yellow', direction: 'left' },
+                    { color: 'red', direction: 'left' }
+                ],
+                bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
+                bubbleBody: 'לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.\nכוונו או גררו את הרכבים אל הנתיב הנכון!\nשימו לב למאפייני הכביש והצומת.\nשימו לב, אתם על זמן!',
+                rules: ['רכב היוצא מכביש חד סטרי: ייצא מהנתיב השמאלי.', 'רכב הנכנס לכביש חד סטרי: ייכנס לנתיב השמאלי.', 'רכב היוצא מכביש דו סטרי: ייצא מהנתיב הימני.', 'רכב הנכנס לכביש דו סטרי: ייכנס לנתיב הימני.', 'רכב היוצא מכביש חד סטרי עם שטח הפרדה בנוי: ייצא מהנתיב השמאלי שבכיוון נסיעתו.', 'רכב הנכנס לכביש חד סטרי עם שטח הפרדה בנוי: ייכנס לנתיב השמאלי שבכיוון נסיעתו.']
+            },
+            {
+                id: 8,
+                instruction: "איך פונים שמאלה, מאיפה ולאן?? לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל. לפניך רכב שרוצה לפנות שמאלה. שים לב אל מאפייני הכביש ופנה עם הרכב אל נקודת היעד הנכונה. יש לך דקה לבצע את הפניה, בלי טעויות!",
+                errorText: "נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.",
+                solutionText: "נכון מאוד! הרכב הצהוב פונה מדו סטרי אל חד סטרי, מאחר וזה כביש שיש בו שטח הפרדה, לכן יפנה מהנתיב הימני אל הנתיב השמאלי.",
+                bgImage: "images/background8.png",
+                solutionImage: "images/solution8.png",
+
+                cars: [
+                    { id: 'red', texture: 'red', x: 400, y: 600, angle: 0 },
+                    { id: 'yellow', texture: 'yellow', x: 800, y: 300, angle: -90 }
+                ],
+
+                paths: {
+                    red: {
+                        left: { type: 'spline', start: [400, 600], points: [400, 450, 400, 350, 350, 300, 200, 300, 0, 320] },
+                        left_wrong: { type: 'spline', start: [400, 600], points: [400, 450, 390, 340, 340, 260, 200, 245, 0, 240] }
+                    },
+                    yellow: {
+                        left: { type: 'spline', start: [800, 300], points: [600, 300, 450, 300, 400, 350, 400, 450, 420, 600] },
+                        left_wrong: { type: 'spline', start: [800, 300], points: [600, 300, 440, 295, 395, 350, 345, 450, 300, 600] }
+                    }
+                },
+
+                solution: [
+                    { color: 'yellow', direction: 'left' },
+                    { color: 'red', direction: 'left' }
+                ],
+                bubbleText: 'לאיזה נתיב הרכב צריך לפנות שמאלה?',
+                bubbleBody: 'לפניכם צומת ובה רכבים שצריכים להגיע לנקודת היעד שלהם המסומנת בדגל.\nכוונו או גררו את הרכבים אל הנתיב הנכון!\nשימו לב למאפייני הכביש והצומת.\nשימו לב, אתם על זמן!',
+                rules: ['רכב היוצא מכביש חד סטרי: ייצא מהנתיב השמאלי.', 'רכב הנכנס לכביש חד סטרי: ייכנס לנתיב השמאלי.', 'רכב היוצא מכביש דו סטרי: ייצא מהנתיב הימני.', 'רכב הנכנס לכביש דו סטרי: ייכנס לנתיב הימני.', 'רכב היוצא מכביש חד סטרי עם שטח הפרדה בנוי: ייצא מהנתיב השמאלי שבכיוון נסיעתו.', 'רכב הנכנס לכביש חד סטרי עם שטח הפרדה בנוי: ייכנס לנתיב השמאלי שבכיוון נסיעתו.']
+            }
+        ];
+
+        // טעינת שלבים: קודם levels.json (בשרת), אחר כך localStorage (בדפדפן), אחר כך ברירת מחדל
+        let LEVELS;
+        const config = {
+            type: Phaser.AUTO,
+            parent: 'game-container',
+            width: 800, height: 600,
+            backgroundColor: '#888888',
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
+            scene: { preload: preload, create: create, update: update }
+        };
+
+        async function loadLevelsAndStartGame() {
+            try {
+                const r = await fetch('levels.json');
+                if (r.ok) {
+                    const data = await r.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        LEVELS = data;
+                    }
+                }
+            } catch (e) {
+                // אין levels.json או שגיאה – ממשיכים ל-localStorage / ברירת מחדל
+            }
+            if (!LEVELS) {
+                try {
+                    const saved = localStorage.getItem('carGameLevels');
+                    if (saved) {
+                        LEVELS = JSON.parse(saved);
+                        if (!Array.isArray(LEVELS) || LEVELS.length === 0) LEVELS = DEFAULT_LEVELS;
+                    }
+                } catch (e) {
+                    LEVELS = DEFAULT_LEVELS;
+                }
+            }
+            if (!LEVELS || !Array.isArray(LEVELS)) LEVELS = DEFAULT_LEVELS;
+            adjustGameSize();
+            window.phaserGame = new Phaser.Game(config);
+        }
+        loadLevelsAndStartGame();
+
+        // מחשב את גודל ה-container בדיוק לפי המסך ומרענן את Phaser
+        function adjustGameSize() {
+            const container = document.getElementById('game-container');
+
+            // הפחת padding אמיתי של body (CSS מאפס אותו על מובייל לרוחב)
+            const bodyStyle = window.getComputedStyle(document.body);
+            const bodyPad   = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
+
+            const maxW = window.innerWidth;
+            const maxH = window.innerHeight - bodyPad - 4;
+
+            // על מסכים קטנים (מובייל לרוחב) - שמור מקום מינימלי לסיידבר
+            const isMobileLandscape = window.innerHeight < 520;
+            const minSidebarW = isMobileLandscape ? Math.max(140, Math.min(210, maxW * 0.26)) : 0;
+            const availW = maxW - minSidebarW;
+
+            // שמור על יחס 4:3
+            let w, h;
+            if (availW / maxH > 4 / 3) {
+                h = maxH; w = Math.round(h * 4 / 3);
+            } else {
+                w = availW; h = Math.round(w * 3 / 4);
+            }
+
+            // על דסקטופ לא נגדל מעל 800×600
+            w = Math.min(w, 800);
+            h = Math.min(h, 600);
+
+            container.style.width  = w + 'px';
+            container.style.height = h + 'px';
+
+            if (window.phaserGame) {
+                window.phaserGame.scale.refresh();
+            }
+        }
+
+        window.addEventListener('resize', adjustGameSize);
+        window.addEventListener('orientationchange', () => setTimeout(adjustGameSize, 200));
+
+        // --- Custom scroll indicator for the right sidebar ---
+        function updateSidebarScrollbar() {
+            const ui = document.getElementById('ui-layer');
+            const thumb = document.getElementById('sb-scroll-thumb');
+            if (!ui || !thumb) return;
+            const overflow = ui.scrollHeight - ui.clientHeight;
+            if (overflow <= 6) { thumb.style.display = 'none'; return; }
+            const r = ui.getBoundingClientRect();
+            const pad = 6;
+            const trackH = r.height - pad * 2;
+            const thumbH = Math.max(30, trackH * (ui.clientHeight / ui.scrollHeight));
+            const t = ui.scrollTop / overflow;
+            thumb.style.display = 'block';
+            // place on the sidebar's inner (left) edge - RTL-natural and always on-screen
+            thumb.style.left = (Math.max(2, r.left + 3)) + 'px';
+            thumb.style.top  = (r.top + pad + (trackH - thumbH) * t) + 'px';
+            thumb.style.height = thumbH + 'px';
+        }
+        function bindSidebarScrollbar() {
+            const ui = document.getElementById('ui-layer');
+            if (ui && !ui._sbBound) {
+                ui._sbBound = true;
+                ui.addEventListener('scroll', updateSidebarScrollbar, { passive: true });
+            }
+            updateSidebarScrollbar();
+        }
+        window.addEventListener('resize', () => setTimeout(updateSidebarScrollbar, 50));
+        window.addEventListener('orientationchange', () => setTimeout(updateSidebarScrollbar, 250));
+        window.addEventListener('load', () => setTimeout(bindSidebarScrollbar, 100));
+
+        // --- מנוע המשחק ---
+        // ==========================================
+        //   GAME STATE
+        // ==========================================
+        let currentLevelIndex = 0;
+        let currentPhase = 'select';  // 'select' | 'drive'
+        let movedCars    = new Set();
+        let levelSuccessAutoTimer = null;
+
+        // ==========================================
+        //   TIMER
+        // ==========================================
+        const LEVEL_TIME = 60;
+        let levelTimer = LEVEL_TIME;
+        let timerInterval = null;
+
+        function startTimer() {
+            stopTimer();
+            levelTimer = LEVEL_TIME;
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                levelTimer--;
+                updateTimerDisplay();
+                if (levelTimer <= 0) {
+                    stopTimer();
+                    onTimerExpired();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        }
+
+        function updateTimerDisplay() {
+            const secs = Math.max(0, levelTimer);
+            const m = Math.floor(secs / 60);
+            const s = secs % 60;
+            const display = document.getElementById('timer-display');
+            const fill    = document.getElementById('timer-progress-fill');
+            if (display) {
+                display.textContent = `⏱ ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                display.classList.toggle('urgent', secs <= 10);
+            }
+            if (fill) {
+                fill.style.width = ((secs / LEVEL_TIME) * 100) + '%';
+                fill.style.background = secs <= 10 ? '#cc0000' : '#F26D5C';
+            }
+        }
+
+        function onTimerExpired() {
+            document.getElementById('police-error-text').innerHTML = 'עבר הזמן! נסו שוב';
+            document.getElementById('police-screen').classList.add('show');
+        }
+
+        // Phase B (driving)
+        let drivingCar  = null;
+        let drivingPath = null;
+        let drivingDir  = null;
+        let drivingT    = 0;
+        let drivingKey  = null;  // מקש החץ שבחר את המסלול הנוכחי
+        let isDraggingB    = false;
+        let pathStartDist  = 0;
+        let dragBaseT      = 0;
+
+        // Lane-fork state (levels with left/left_wrong choices)
+        let waitingForLane = false;  // car paused at fork, waiting for ↑/↓
+        let laneOptions    = null;   // { up: {dir,path}, down: {dir,path} }
+        let carLaneOptions = {};     // precomputed per car: { carId: laneOptions }
+        let laneCommitted  = false;  // true once the player picked a lane at the fork
+        let forkUI         = [];     // Phaser display objects to clear after choice
+
+        // נהיגה במקלדת
+        const keysHeld = new Set();
+
+        let carsMap      = {};
+        let activePaths  = {};
+        let gameScene    = null;
+        let destinationMarkers = [];
+        let dragStartX   = 0;
+        let dragStartY   = 0;
+        let lastPointerX = 0;
+        let lastPointerY = 0;
+
+        // ==========================================
+        //   PHASER: PRELOAD
+        // ==========================================
+        function preload() {
+            const bgLoaded = {};
+            if (typeof LEVELS !== 'undefined' && Array.isArray(LEVELS)) {
+                LEVELS.forEach(level => {
+                    const src = level.bgImage || 'images/background-junction.png';
+                    if (!bgLoaded[src]) {
+                        bgLoaded[src] = true;
+                        this.load.image(src.split('/').pop(), src);
+                    }
+                });
+            }
+            if (!bgLoaded['images/background-junction.png']) {
+                this.load.image('background-junction.png', 'images/background-junction.png');
+            }
+            this.load.image('red',    'images/red.png');
+            this.load.image('blue',   'images/blue.png');
+            this.load.image('yellow', 'images/yellow.png');
+            this.load.image('grey',   'images/grey.png');
+            this.load.image('orange',    'images/orange.png');
+            this.load.image('green',     'images/green.png');
+            this.load.image('turquoise', 'images/turqize.png');
+        }
+
+        // ==========================================
+        //   PHASER: CREATE - input handlers
+        // ==========================================
+        function create() {
+            gameScene = this;
+
+            this.input.on('pointerdown', (pointer) => {
+                dragStartX = pointer.x;
+                dragStartY = pointer.y;
+                lastPointerX = pointer.x;
+                lastPointerY = pointer.y;
+                // Allow drag to start from anywhere on canvas during drive phase
+                if (currentPhase === 'drive' && drivingCar) {
+                    isDraggingB = true;
+                }
+            });
+
+            this.input.on('pointermove', (pointer) => {
+                if (currentPhase !== 'drive' || !isDraggingB || !drivingCar || !pointer.isDown) return;
+
+                const dx = pointer.x - dragStartX;
+                const dy = pointer.y - dragStartY;
+                const totalDist = Math.sqrt(dx*dx + dy*dy);
+                if (totalDist < 10) return;
+
+                const dirs = Object.keys(activePaths[drivingCar.name] || {});
+                if (dirs.length === 0) return;
+
+                // ── Lane-choice level (6-8): drive approach, pause at fork, drag to a lane ──
+                const dragLaneData = carLaneOptions[drivingCar.name];
+                if (dragLaneData) {
+                    const pdx = pointer.x - lastPointerX;
+                    const pdy = pointer.y - lastPointerY;
+                    lastPointerX = pointer.x; lastPointerY = pointer.y;
+
+                    // Paused at the fork: drag toward the lane (flag) you want
+                    if (waitingForLane) {
+                        if (Math.sqrt(pdx*pdx + pdy*pdy) > 4) {
+                            let chosen = null, best = -Infinity;
+                            for (const opt of [dragLaneData.up, dragLaneData.down]) {
+                                const ep = opt.path.getPoint(1);
+                                if (!ep) continue;
+                                const dx = ep.x - drivingCar.x;
+                                const dy = ep.y - drivingCar.y;
+                                const len = Math.sqrt(dx*dx + dy*dy) || 1;
+                                const dot = (pdx * dx + pdy * dy) / len;
+                                if (dot > best) { best = dot; chosen = opt; }
+                            }
+                            if (chosen) {
+                                drivingPath = chosen.path; drivingDir = chosen.dir;
+                                drivingT = findClosestPointOnPath(chosen.path, drivingCar.x, drivingCar.y) ?? drivingT;
+                                laneCommitted = true; waitingForLane = false; laneOptions = null;
+                                // keep forkUI visible until completeDrive clears it
+                            }
+                        }
+                        return;
+                    }
+
+                    // Option A: allow re-selection while still near the fork
+                    if (laneCommitted && drivingT < dragLaneData.forkT + 0.15) {
+                        if (Math.sqrt(pdx*pdx + pdy*pdy) > 4) {
+                            let chosen = null, best = -Infinity;
+                            for (const opt of [dragLaneData.up, dragLaneData.down]) {
+                                const ep = opt.path.getPoint(1);
+                                if (!ep) continue;
+                                const dx = ep.x - drivingCar.x;
+                                const dy = ep.y - drivingCar.y;
+                                const len = Math.sqrt(dx*dx + dy*dy) || 1;
+                                const dot = (pdx * dx + pdy * dy) / len;
+                                if (dot > best) { best = dot; chosen = opt; }
+                            }
+                            if (chosen && chosen.path !== drivingPath) {
+                                drivingPath = chosen.path; drivingDir = chosen.dir;
+                                drivingT = findClosestPointOnPath(chosen.path, drivingCar.x, drivingCar.y) ?? drivingT;
+                            }
+                        }
+                    }
+
+                    // Before the fork: drive along the shared approach
+                    if (!drivingPath) {
+                        drivingPath = dragLaneData.up.path; drivingDir = dragLaneData.up.dir; drivingT = 0;
+                        clearForkUI();
+                    }
+                    const tg = drivingPath.getTangent(Math.min(Math.max(drivingT, 0.001), 0.999));
+                    const fwd = pdx * tg.x + pdy * tg.y;
+                    const plen = drivingPath.getLength() || 400;
+                    drivingT = Math.min(Math.max(drivingT + fwd / plen, 0), 1.0);
+                    const p = drivingPath.getPoint(drivingT);
+                    drivingCar.x = p.x; drivingCar.y = p.y;
+                    drivingCar.rotation = drivingPath.getTangent(Math.min(drivingT, 0.999)).angle() + Math.PI / 2;
+                    drivingCar.pathFollower.t = drivingT;
+
+                    if (!laneCommitted && drivingT >= dragLaneData.forkT) {
+                        waitingForLane = true; laneOptions = dragLaneData; drivingT = dragLaneData.forkT;
+                        const fp = drivingPath.getPoint(drivingT);
+                        drivingCar.x = fp.x; drivingCar.y = fp.y; drivingCar.pathFollower.t = drivingT;
+                        showForkUI(dragLaneData);
+                        return;
+                    }
+                    if (laneCommitted && drivingT >= 0.9) { isDraggingB = false; completeDrive(); }
+                    return;
+                }
+
+                const dragAngle = Math.atan2(dy, dx);
+
+                // Determine if all available paths share the same base direction (lane choice)
+                const baseDir = d => d.replace('_wrong', '');
+                const isLaneChoice = dirs.length > 1 && dirs.every(d => baseDir(d) === baseDir(dirs[0]));
+
+                function pickBestDir() {
+                    if (dirs.length === 1) return dirs[0];
+                    if (isLaneChoice) {
+                        // Lane choice: pick by endpoint proximity - drag toward the destination you want
+                        let best = dirs[0], bestDist = Infinity;
+                        for (const d of dirs) {
+                            const ep = activePaths[drivingCar.name][d].getPoint(1);
+                            const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, ep.x, ep.y);
+                            if (dist < bestDist) { bestDist = dist; best = d; }
+                        }
+                        return best;
+                    } else {
+                        // Distinct directions: pick by drag angle
+                        return pickDirByWorldAngle(drivingCar.name, dragAngle, dirs) || dirs[0];
+                    }
+                }
+
+                // Delta-based movement - allows both forward and backward drag
+                const pdx = pointer.x - lastPointerX;
+                const pdy = pointer.y - lastPointerY;
+                lastPointerX = pointer.x;
+                lastPointerY = pointer.y;
+
+                if (!drivingDir) {
+                    const chosen = pickBestDir();
+                    drivingPath = activePaths[drivingCar.name][chosen];
+                    drivingDir  = chosen;
+                    drivingT    = 0;
+                    clearForkUI();   // remove start-position hint arrows once dragging
+                }
+
+                if (!drivingPath) return;
+
+                const tangent = drivingPath.getTangent(Math.min(Math.max(drivingT, 0.001), 0.999));
+                const forward = pdx * tangent.x + pdy * tangent.y;
+
+                // Allow direction/lane switch while moving forward.
+                // For lane-choice levels (left + left_wrong) keep switching almost the
+                // whole way so the player can steer to EITHER flag (correct or wrong).
+                const switchWindow = isLaneChoice ? 0.9 : 0.7;
+                if (dirs.length > 1 && drivingT < switchWindow && forward > 0) {
+                    const newDir = pickBestDir();
+                    if (newDir !== drivingDir) {
+                        const newPath = activePaths[drivingCar.name][newDir];
+                        const newT = findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? drivingT;
+                        drivingPath = newPath;
+                        drivingDir  = newDir;
+                        drivingT    = newT;
+                    }
+                }
+                const pathLen = drivingPath.getLength() || 400;
+                const deltaT  = forward / pathLen;
+                const proposedT = Math.min(Math.max(drivingT + deltaT, 0), 1.0);
+
+                drivingT = proposedT;
+                drivingCar.pathFollower.t = drivingT;
+                const pt = drivingPath.getPoint(drivingT);
+                drivingCar.x = pt.x;
+                drivingCar.y = pt.y;
+                const tang = drivingPath.getTangent(Math.min(drivingT, 0.999));
+                drivingCar.rotation = tang.angle() + Math.PI / 2;
+
+                // Dragged back to start - reset for fresh direction choice
+                if (drivingT < 0.03 && drivingDir) {
+                    const carData = LEVELS[currentLevelIndex].cars.find(c => c.id === drivingCar.name);
+                    if (carData) {
+                        drivingCar.x = carData.x; drivingCar.y = carData.y;
+                        drivingCar.rotation = Phaser.Math.DegToRad(carData.angle);
+                    }
+                    drivingDir = null; drivingPath = null; drivingT = 0;
+                    dragStartX = pointer.x; dragStartY = pointer.y;
+                }
+
+                if (drivingT >= 0.9) {
+                    isDraggingB = false;
+                    completeDrive();
+                }
+            });
+
+            this.input.on('pointerup', () => {
+                isDraggingB = false;
+                // In Phase B: car stays where it is - player can drag again to continue
+            });
+
+            initLevel();
+        }
+
+        // Pick path whose overall direction (start→end) best matches a world-direction angle.
+        // Using start→end instead of initial tangent avoids the problem where all paths
+        // for a given car start in the same direction (e.g. all go UP at t=0.02)
+        // and the tangent differences are too small to distinguish left/right reliably.
+        function pickDirByWorldAngle(carId, arrowAngle, dirs) {
+            let best = null, minD = Infinity;
+            dirs.forEach(dir => {
+                const path = activePaths[carId] && activePaths[carId][dir];
+                if (!path) return;
+                const startPt = path.getPoint(0);
+                const endPt   = path.getPoint(1);
+                if (!startPt || !endPt) return;
+                const pathAngle = Math.atan2(endPt.y - startPt.y, endPt.x - startPt.x);
+                let d = Math.abs(arrowAngle - pathAngle);
+                if (d > Math.PI) d = 2 * Math.PI - d;
+                if (d < minD) { minD = d; best = dir; }
+            });
+            return minD < (Math.PI * 2 / 3) ? best : null;
+        }
+
+        // Pick path direction matching drag angle (same logic as existing swipe)
+        function pickDirByAngle(car, diffX, diffY, dirs) {
+            const swipeAngle = Math.atan2(diffY, diffX);
+            const carFwd     = getCarForwardMathAngleRad(car);
+            let rel = ((swipeAngle - carFwd) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+            const DA = { straight: 0, left: -Math.PI / 2, left_wrong: -Math.PI / 2, right: Math.PI / 2 };
+            let best = null, minD = Infinity;
+            dirs.forEach(dir => {
+                const da = DA[dir] !== undefined ? DA[dir] : 0;
+                let d = Math.abs(rel - da);
+                if (d > Math.PI) d = 2 * Math.PI - d;
+                if (d < minD) { minD = d; best = dir; }
+            });
+            return minD < (Math.PI * 2 / 3) ? best : null;
+        }
+
+        // ==========================================
+        //   LANE FORK - helpers
+        // ==========================================
+
+        // Find t where two paths diverge beyond threshold pixels
+        function computeForkT(pathA, pathB, threshold) {
+            threshold = threshold || 35;
+            for (let t = 0; t <= 1; t += 0.02) {
+                try {
+                    const a = pathA.getPoint(t);
+                    const b = pathB.getPoint(t);
+                    if (!a || !b) continue;
+                    if (Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y) > threshold) {
+                        return Math.max(0, t - 0.02);
+                    }
+                } catch(e) {}
+            }
+            return 0.45;
+        }
+
+        // Build lane fork data for a car (if it has left/left_wrong style paths)
+        function buildCarLaneData(carId) {
+            const paths = activePaths[carId];
+            if (!paths) return null;
+            const dirs = Object.keys(paths);
+            // Find a base direction that has a _wrong variant
+            for (const d of dirs) {
+                const wrong = d + '_wrong';
+                if (dirs.includes(wrong)) {
+                    const epBase  = paths[d].getPoint(1);
+                    const epWrong = paths[wrong].getPoint(1);
+                    if (!epBase || !epWrong) continue;
+                    // Assign ↑ to whichever endpoint is higher on screen (lower Y)
+                    const upDir   = epBase.y <= epWrong.y ? d     : wrong;
+                    const downDir = epBase.y <= epWrong.y ? wrong : d;
+                    return {
+                        up:    { dir: upDir,   path: paths[upDir]   },
+                        down:  { dir: downDir, path: paths[downDir] },
+                        forkT: computeForkT(paths[d], paths[wrong])
+                    };
+                }
+            }
+            return null;
+        }
+
+        function showForkUI(lanes) {
+            clearForkUI();
+            const carX = drivingCar.x;
+            const carY = drivingCar.y;
+
+            // Arrow labels pointing toward each destination
+            [
+                { label: '↑', opt: lanes.up   },
+                { label: '↓', opt: lanes.down  },
+            ].forEach(({ label, opt }) => {
+                const ep = opt.path.getPoint(1);
+                if (!ep) return;
+
+                // Line from car toward destination
+                const g = gameScene.add.graphics();
+                g.lineStyle(3, 0xffffff, 0.7);
+                g.beginPath();
+                g.moveTo(carX, carY);
+                // Draw only partway toward endpoint
+                const mx = carX + (ep.x - carX) * 0.35;
+                const my = carY + (ep.y - carY) * 0.35;
+                g.lineTo(mx, my);
+                g.strokePath();
+                g.setDepth(10);
+
+                // Key label near midpoint
+                const tx = gameScene.add.text(mx, my, label, {
+                    fontSize: '28px', fontFamily: 'Arial', color: '#ffffff',
+                    stroke: '#000000', strokeThickness: 4,
+                    backgroundColor: '#00000066', padding: { x: 6, y: 2 }
+                }).setOrigin(0.5).setDepth(11);
+
+                forkUI.push(g, tx);
+            });
+        }
+
+        function clearForkUI() {
+            forkUI.forEach(obj => obj && obj.destroy && obj.destroy());
+            forkUI = [];
+        }
+
+        // ==========================================
+        //   נהיגה ידנית במקלדת - שלב ב׳
+        // ==========================================
+        function handleKeyDown(event) {
+            const key  = event.key;
+            const code = event.code;
+            keysHeld.add(key);
+
+            const isArrow = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(code);
+            if (isArrow) event.preventDefault();
+
+            if (!isArrow || currentPhase !== 'drive' || !drivingCar) return;
+
+            if (!activePaths[drivingCar.name]) return;
+            const dirs = Object.keys(activePaths[drivingCar.name]);
+            if (dirs.length === 0) return;
+
+            // ── Lane-choice level (left + left_wrong) ──
+            // The car drives along the shared approach; when it reaches the fork
+            // (inside the turn) it pauses and shows ↑/↓ arrows pointing to each lane.
+            const laneData = carLaneOptions[drivingCar.name];
+            if (laneData) {
+                // Paused at the fork - ↑/↓ commits to a lane
+                if (waitingForLane && laneOptions) {
+                    let chosen = null;
+                    if (key === 'ArrowUp')   chosen = laneOptions.up;
+                    if (key === 'ArrowDown') chosen = laneOptions.down;
+                    if (!chosen) return;
+                    drivingPath    = chosen.path;
+                    drivingDir     = chosen.dir;
+                    // drivingT stays at the fork point - continue from there
+                    drivingT       = findClosestPointOnPath(chosen.path, drivingCar.x, drivingCar.y) ?? drivingT;
+                    laneCommitted  = true;
+                    waitingForLane = false;
+                    laneOptions    = null;
+                    // keep forkUI visible until completeDrive clears it
+                    drivingKey     = key;
+                    return;
+                }
+                // Before the fork: any arrow starts/continues driving along the approach
+                if (!drivingPath) {
+                    drivingPath = laneData.up.path;   // up & down share geometry until the fork
+                    drivingDir  = laneData.up.dir;
+                    drivingT    = 0;
+                }
+                drivingKey = key;
+                return;
+            }
+
+            const worldAngles = {
+                'ArrowUp':    -Math.PI / 2,
+                'ArrowDown':   Math.PI / 2,
+                'ArrowLeft':   Math.PI,
+                'ArrowRight':  0,
+            };
+            const arrowAngle = worldAngles[key];
+            if (arrowAngle === undefined) return;
+
+            // Non-lane levels: choose among distinct directions; ignore _wrong variants
+            const keyboardDirs = dirs.filter(d => !d.endsWith('_wrong'));
+            if (keyboardDirs.length === 0) return;
+
+            let chosen;
+            if (keyboardDirs.length === 1) {
+                chosen = keyboardDirs[0];
+            } else {
+                chosen = pickDirByWorldAngle(drivingCar.name, arrowAngle, keyboardDirs);
+            }
+
+            if (!chosen) return;
+
+            if (chosen !== drivingDir) {
+                const newPath = activePaths[drivingCar.name][chosen];
+                const newT = drivingT > 0
+                    ? (findClosestPointOnPath(newPath, drivingCar.x, drivingCar.y) ?? 0)
+                    : 0;
+                drivingPath = newPath;
+                drivingDir  = chosen;
+                drivingT    = newT;
+            } else if (!drivingPath) {
+                drivingPath = activePaths[drivingCar.name][chosen];
+                drivingDir  = chosen;
+                drivingT    = 0;
+            }
+            drivingKey = key;
+        }
+
+        function handleKeyUp(event) {
+            keysHeld.delete(event.key);
+        }
+
+        function update() {
+            if (currentPhase !== 'drive' || !drivingCar || !drivingPath) return;
+            if (waitingForLane) return;  // paused at the fork - waiting for ↑/↓ choice
+
+            if (!drivingKey || !keysHeld.has(drivingKey)) return;
+
+            drivingT = Math.min(1, drivingT + 0.008);
+            const pt = drivingPath.getPoint(drivingT);
+            drivingCar.x = pt.x;
+            drivingCar.y = pt.y;
+            const tang = drivingPath.getTangent(drivingT);
+            const targetAngle = tang.angle() + Math.PI / 2;
+            drivingCar.rotation = Phaser.Math.Angle.RotateTo(drivingCar.rotation, targetAngle, 0.15);
+            drivingCar.pathFollower.t = drivingT;
+
+            // Lane-choice level: pause at the fork (inside the turn) and show ↑/↓ arrows
+            const lanes = carLaneOptions[drivingCar.name];
+            if (lanes && !laneCommitted && drivingT >= lanes.forkT) {
+                waitingForLane = true;
+                laneOptions    = lanes;
+                drivingKey     = null;          // stop advancing
+                drivingT       = lanes.forkT;
+                const fp = drivingPath.getPoint(drivingT);
+                drivingCar.x = fp.x; drivingCar.y = fp.y;
+                drivingCar.pathFollower.t = drivingT;
+                showForkUI(lanes);
+                return;
+            }
+
+            if (drivingT >= 0.9) {
+                completeDrive();
+            }
+        }
+
+        // ==========================================
+        //   LEVEL INIT
+        // ==========================================
+        function initLevel() {
+            stopTimer();
+            // Reset state
+            currentPhase = 'select';
+            movedCars    = new Set();
+            drivingCar   = null; drivingPath = null; drivingDir = null; drivingT = 0;
+            drivingKey   = null;
+            isDraggingB  = false;
+            waitingForLane = false; laneOptions = null; carLaneOptions = {}; laneCommitted = false;
+            clearForkUI();
+            keysHeld.clear();
+
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup',   handleKeyUp);
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup',   handleKeyUp);
+
+            // Cleanup previous scene objects
+            Object.values(carsMap).forEach(c => c && c.destroy());
+            destinationMarkers.forEach(m => m && m.destroy && m.destroy());
+            destinationMarkers = [];
+            carsMap = {};
+            activePaths = {};
+            gameScene.children.removeAll();
+
+            const levelData = LEVELS[currentLevelIndex];
+
+            // Background
+            const bgSrc = levelData.bgImage || 'images/background-junction.png';
+            const bgKey = bgSrc.split('/').pop();
+            gameScene.add.image(400, 300, bgKey).setDisplaySize(800, 600).setDepth(0);
+
+            const gc = document.getElementById('game-container');
+            gc.setAttribute('data-level-id', String(levelData.id));
+            gc.setAttribute('data-bg-image', bgSrc);
+
+            // Build all path objects
+            for (let carId in levelData.paths) {
+                activePaths[carId] = {};
+                for (let dir in levelData.paths[carId]) {
+                    const pd = levelData.paths[carId][dir];
+                    if (!pd || !pd.start) continue;
+                    let path;
+                    if (pd.type === 'line' && pd.end) {
+                        path = new Phaser.Curves.Path(pd.start[0], pd.start[1]).lineTo(pd.end[0], pd.end[1]);
+                    } else if (pd.type === 'spline' && pd.points && pd.points.length >= 2) {
+                        path = new Phaser.Curves.Path(pd.start[0], pd.start[1]).splineTo(pd.points);
+                    } else if (pd.type === 'curve' && pd.p1 && pd.end) {
+                        path = new Phaser.Curves.Path(pd.start[0], pd.start[1]).quadraticBezierTo(pd.p1[0], pd.p1[1], pd.end[0], pd.end[1]);
+                    }
+                    if (path) activePaths[carId][dir] = path;
+                }
+            }
+
+            // Pre-compute lane-fork data for cars that have left/left_wrong pairs
+            carLaneOptions = {};
+            for (const carId in activePaths) {
+                const lanes = buildCarLaneData(carId);
+                if (lanes) carLaneOptions[carId] = lanes;
+            }
+
+            // Destination circles (correct + wrong destinations both shown - player doesn't know which is right)
+            const carColors = { red: 0xff3333, yellow: 0xffdd00, blue: 0x44aaff, grey: 0xaaaaaa, orange: 0xe8821e, green: 0x3bb34a, turquoise: 0x29c5e6 };
+            const solutionDirMap = {};
+            levelData.solution.forEach(s => { solutionDirMap[s.color] = s.direction; });
+
+            for (let carId in activePaths) {
+                const correctDir = solutionDirMap[carId];
+                for (let dir in activePaths[carId]) {
+                    const isCorrect = (dir === correctDir);
+                    // Only show the direct _wrong variant of the correct direction (e.g. left_wrong when correct=left)
+                    // Don't show cross_wrong or other unrelated wrong paths
+                    const isWrong   = correctDir ? (dir === correctDir + '_wrong') : false;
+                    if (!isCorrect && !isWrong) continue;
+                    const endPt = activePaths[carId][dir].getPoint(1);
+                    if (!endPt) continue;
+                    const color = carColors[carId] || 0xffffff;
+                    const ring = gameScene.add.graphics();
+                    ring.lineStyle(4, color, 1);
+                    ring.strokeCircle(0, 0, 20);
+                    ring.fillStyle(color, 0.3);
+                    ring.fillCircle(0, 0, 20);
+                    ring.x = endPt.x; ring.y = endPt.y;
+                    ring.setDepth(0.5);
+                    gameScene.tweens.add({
+                        targets: ring, scaleX: 1.45, scaleY: 1.45, alpha: 0.35,
+                        duration: 750, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+                    });
+                    destinationMarkers.push(ring);
+                }
+            }
+
+            // Create cars
+            levelData.cars.forEach(cd => {
+                carsMap[cd.id] = createCar(gameScene, cd.x, cd.y, cd.texture, cd.id, cd.angle);
+            });
+
+            // Reset UI
+            document.getElementById('level-title').innerText = `תרחיש מס' ${levelData.id}`;
+            document.getElementById('ui-instructions').innerHTML = levelData.instruction || '';
+            document.getElementById('status-msg').style.display    = 'none';
+            document.getElementById('solution-img').style.display  = 'none';
+            document.getElementById('buttons-container').style.display = 'none';
+
+            startPhaseSelect();
+            showQuestionBubble(levelData);
+            if (typeof bindSidebarScrollbar === 'function') setTimeout(bindSidebarScrollbar, 60);
+        }
+
+        function createCar(scene, x, y, texture, name, angle) {
+            const car = scene.add.image(x, y, texture).setScale(1);
+            car.setDepth(1);
+            car.name = name;
+            car.initialAngle = angle;
+            car.angle = angle;
+            car.setInteractive({ cursor: 'pointer', useHandCursor: true });
+            car.pathFollower = { t: 0 };
+            car.hasMoved = false;
+
+            car.on('pointerdown', (pointer) => {
+                if (car.hasMoved) return;
+                if (currentPhase === 'select') {
+                    handleCarClick(car);
+                } else if (currentPhase === 'drive' && car === drivingCar) {
+                    isDraggingB   = true;
+                    dragStartX    = pointer.x;
+                    dragStartY    = pointer.y;
+                    lastPointerX  = pointer.x;
+                    lastPointerY  = pointer.y;
+                    dragBaseT     = drivingT;  // continue from current position
+                    pathStartDist = 0;
+                    // Note: drivingDir/drivingPath may already be set by arrow key,
+                    // or will be chosen on first pointermove by drag angle.
+                }
+            });
+
+            return car;
+        }
+
+        // Helper: forward angle in math radians
+        function getCarForwardMathAngleRad(car) {
+            const ga = car.initialAngle !== undefined ? car.initialAngle : car.angle;
+            return Phaser.Math.DegToRad(ga - 90);
+        }
+
+        function findClosestPointOnPath(path, x, y) {
+            let closestT = null, minDist = Infinity;
+            for (let t = 0; t <= 1; t += 0.01) {
+                try {
+                    const pt   = path.getPoint(t);
+                    const dist = Phaser.Math.Distance.Between(x, y, pt.x, pt.y);
+                    if (dist < minDist) { minDist = dist; closestT = t; }
+                } catch (e) {}
+            }
+            return closestT;
+        }
+
+        // ==========================================
+        //   PHASE A - SELECT THE RIGHT CAR
+        // ==========================================
+        const phaseATexts = [
+            'סמנו את המכונית שיש לה זכות קדימה ראשונה, העזרו בחוקים',
+            'סמנו את המכונית השנייה שיש לה זכות קדימה בצומת, העזרו בחוקים',
+            'סמנו את המכונית השלישית שבצומת'
+        ];
+
+        function startPhaseSelect() {
+            currentPhase = 'select';
+            const levelData = LEVELS[currentLevelIndex];
+            const step = movedCars.size;
+
+            let instruction;
+            if (levelData.orderedSolution === false) {
+                instruction = step === 0 ? 'בחרו מכונית להסעה, העזרו בחוקים' : 'בחרו את המכונית הבאה להסעה';
+            } else {
+                instruction = phaseATexts[step] || `סמנו את המכונית מספר ${step + 1} שבצומת`;
+            }
+            // (instruction text is kept here for reference but ui-instructions is set
+            //  once in initLevel from levelData.instruction and stays there throughout)
+
+            // Re-enable all remaining (non-driven) cars
+            levelData.cars.forEach(cd => {
+                const car = carsMap[cd.id];
+                if (car && !car.hasMoved) {
+                    car.setTint(0xffffff);
+                    car.setInteractive({ cursor: 'pointer', useHandCursor: true });
+                }
+            });
+        }
+
+        function handleCarClick(car) {
+            const levelData = LEVELS[currentLevelIndex];
+            let isCorrect;
+            if (levelData.orderedSolution === false) {
+                isCorrect = true; // any car is valid
+            } else {
+                const expected = levelData.solution[movedCars.size] && levelData.solution[movedCars.size].color;
+                isCorrect = (car.name === expected);
+            }
+
+            if (isCorrect) {
+                startPhaseDrive(car);
+            } else {
+                // Brief red flash then police screen
+                car.setTint(0xF26D5C);
+                gameScene.time.delayedCall(400, () => {
+                    if (carsMap[car.name]) car.setTint(0xffffff);
+                    showPoliceScreen();
+                });
+            }
+        }
+
+        // ==========================================
+        //   PHASE B - DRIVE TO DESTINATION
+        // ==========================================
+        function startPhaseDrive(car) {
+            currentPhase = 'drive';
+            drivingCar   = car;
+            drivingPath  = null;
+            drivingDir   = null;
+            drivingT     = 0;
+            drivingKey   = null;
+            isDraggingB  = false;
+            waitingForLane = false;
+            laneOptions    = null;
+            laneCommitted  = false;
+            car.pathFollower.t = 0;
+
+            const levelData = LEVELS[currentLevelIndex];
+            levelData.cars.forEach(cd => {
+                const c = carsMap[cd.id];
+                if (!c || c.hasMoved) return;
+                if (c === car) {
+                    c.setTint(0x55ff55);
+                    c.setInteractive({ cursor: 'grab', useHandCursor: true });
+                } else {
+                    c.setTint(0xaaaaaa);
+                    c.disableInteractive();
+                }
+            });
+
+            // Arrows are NOT shown at the start - they appear at the fork (inside the turn)
+            clearForkUI();
+        }
+
+        function completeDrive() {
+            if (!drivingCar || !drivingPath) return;
+
+            // Check whether this car reached its designated destination
+            const levelData  = LEVELS[currentLevelIndex];
+            const carColor   = drivingCar.name;
+            const sol        = levelData.solution.find(s => s.color === carColor);
+            const expectedDir = sol ? sol.direction : null;
+            const isWrong    = !drivingDir || !expectedDir || drivingDir !== expectedDir;
+
+            if (isWrong) {
+                // Wrong destination - shake, snap back, then show police screen
+                const car      = drivingCar;
+                const path     = drivingPath;
+                const carData  = levelData.cars.find(c => c.id === car.name);
+                const wrongDir = drivingDir;
+                drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0; drivingKey = null;
+                waitingForLane = false; laneOptions = null; laneCommitted = false; clearForkUI();
+                car.disableInteractive();
+                gameScene.tweens.add({
+                    targets: car, x: car.x + 8,
+                    duration: 60, yoyo: true, repeat: 3,
+                    onComplete: () => {
+                        const sp = path.getPoint(0);
+                        car.x = sp.x; car.y = sp.y;
+                        if (carData) car.rotation = Phaser.Math.DegToRad(carData.angle);
+                        car.pathFollower.t = 0;
+                        car.setTint(0xffffff);
+                        car.setInteractive({ cursor: 'pointer', useHandCursor: true });
+                        const errText = (wrongDir && wrongDir.endsWith('_wrong'))
+                            ? (levelData.errorText || 'נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.')
+                            : 'נכנסתם לצומת בכיוון הלא נכון! נסו שוב, הפעם בכיוון הנכון.';
+                        document.getElementById('police-error-text').innerHTML = errText;
+                        document.getElementById('police-screen').classList.add('show');
+                    }
+                });
+                return;
+            }
+
+            // Correct! Animate to exact endpoint
+            const car  = drivingCar;
+            const path = drivingPath;
+            const t    = drivingT;
+            gameScene.tweens.add({
+                targets: car.pathFollower, t: 1,
+                duration: Math.max(150, (1 - t) * 700),
+                ease: 'Sine.easeOut',
+                onUpdate: () => {
+                    const pt = path.getPoint(car.pathFollower.t);
+                    car.x = pt.x; car.y = pt.y;
+                    const tang = path.getTangent(car.pathFollower.t);
+                    car.rotation = tang.angle() + Math.PI / 2;
+                },
+                onComplete: () => {
+                    car.setTint(0x888888);
+                    car.hasMoved = true;
+                    car.disableInteractive();
+                    movedCars.add(car.name);
+                    drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0; drivingKey = null;
+                waitingForLane = false; laneOptions = null; laneCommitted = false; clearForkUI();
+                    const levelData = LEVELS[currentLevelIndex];
+                    const isLastCar = movedCars.size >= levelData.solution.length;
+                    showCarSuccessPopup(isLastCar);
+                    if (isLastCar) {
+                        setTimeout(showLevelSuccess, 1400);
+                    } else {
+                        setTimeout(startPhaseSelect, 1100);
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        //   LEVEL SUCCESS
+        // ==========================================
+        function showLevelSuccess() {
+            stopTimer();
+            const levelData = LEVELS[currentLevelIndex];
+            document.getElementById('level-success-badge').textContent = `תרחיש מס' ${levelData.id}`;
+            document.getElementById('level-success-text').textContent  = levelData.solutionText || 'כל הכבוד! תשובה נכונה.';
+            const img = document.getElementById('level-success-img');
+            if (levelData.solutionImage) { img.src = levelData.solutionImage; img.style.display = 'block'; }
+            else { img.style.display = 'none'; }
+            const nextBtn = document.getElementById('level-success-next-btn');
+            const endBtn  = document.getElementById('level-success-end-btn');
+            const isLast  = (currentLevelIndex === LEVELS.length - 1);
+            nextBtn.style.display = isLast ? 'none' : 'block';
+            if (endBtn) endBtn.style.display = isLast ? 'block' : 'none';
+            document.getElementById('level-success-popup').classList.add('show');
+            // On the last level: auto-advance to the end screen after a few seconds,
+            // unless the player clicks "סיים משחק" (or "נסו שוב") first.
+            if (isLast) levelSuccessAutoTimer = setTimeout(() => {
+                levelSuccessAutoTimer = null;
+                document.getElementById('level-success-popup').classList.remove('show');
+                showEndScreen();
+            }, 3000);
+        }
+
+        function closeLevelSuccessAndNext() {
+            document.getElementById('level-success-popup').classList.remove('show');
+            nextLevel();
+        }
+        function closeLevelSuccessAndEnd() {
+            if (levelSuccessAutoTimer) { clearTimeout(levelSuccessAutoTimer); levelSuccessAutoTimer = null; }
+            document.getElementById('level-success-popup').classList.remove('show');
+            showEndScreen();
+        }
+        function closeLevelSuccessAndRetry() {
+            if (levelSuccessAutoTimer) { clearTimeout(levelSuccessAutoTimer); levelSuccessAutoTimer = null; }
+            document.getElementById('level-success-popup').classList.remove('show');
+            initLevel();
+        }
+
+        function nextLevel() {
+            if (currentLevelIndex < LEVELS.length - 1) {
+                currentLevelIndex++;
+                initLevel();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('end-screen').classList.remove('show');
+            currentLevelIndex = 0;
+            document.getElementById('intro-overlay').style.display = 'flex';
+        }
+
+        function showEndScreen() {
+            document.getElementById('end-screen').classList.add('show');
+            launchConfetti();
+        }
+
+        function launchConfetti() {
+            const colors = ['#ff6b6b','#ffdd57','#48c774','#3273dc','#ff9f43','#ff69b4','#00d1b2','#b86bff'];
+            const shapes = [4, 6, 8, 10];
+            for (let i = 0; i < 180; i++) {
+                setTimeout(() => {
+                    const p = document.createElement('div');
+                    p.className = 'confetti-piece';
+                    const w = shapes[Math.floor(Math.random() * shapes.length)];
+                    p.style.left   = (Math.random() * 100) + 'vw';
+                    p.style.top    = '-20px';
+                    p.style.width  = w + 'px';
+                    p.style.height = (w * (Math.random() * 1.5 + 0.8)) + 'px';
+                    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    p.style.borderRadius = Math.random() > 0.4 ? '50%' : '2px';
+                    p.style.animationDuration = (Math.random() * 2.5 + 2) + 's';
+                    p.style.animationDelay    = (Math.random() * 0.8) + 's';
+                    document.body.appendChild(p);
+                    setTimeout(() => p.remove(), 6000);
+                }, i * 18);
+            }
+        }
+
+        // ==========================================
+        //   CAR SUCCESS POPUP
+        // ==========================================
+        function showCarSuccessPopup(isLastCar) {
+            document.getElementById('car-success-sub').textContent =
+                isLastCar ? 'סיימת את כל השלב!' : 'ממשיכים לרכב הבא...';
+            const popup = document.getElementById('car-success-popup');
+            popup.classList.add('show');
+            setTimeout(() => popup.classList.remove('show'), 1200);
+        }
+
+        // ==========================================
+        //   INTRO SCREEN
+        // ==========================================
+        function closeIntro() {
+            document.getElementById('intro-overlay').style.display = 'none';
+        }
+
+        // ==========================================
+        //   PRE-QUESTION BUBBLE
+        // ==========================================
+        function showQuestionBubble(levelData) {
+            const instr = levelData.instruction || '';
+            const short = levelData.bubbleText
+                || (instr.split('??')[0] || instr.split('?')[0] || instr).trim();
+            document.getElementById('bubble-level-badge').textContent = `תרחיש מס' ${levelData.id}`;
+            document.getElementById('bubble-text').textContent = short;
+            const bodyEl = document.getElementById('bubble-body');
+            if (bodyEl) bodyEl.textContent = levelData.bubbleBody || '';
+            document.getElementById('question-bubble').classList.add('show');
+        }
+        function closeQuestionBubble() {
+            document.getElementById('question-bubble').classList.remove('show');
+            startTimer();
+            // Briefly disable Phaser input to prevent click-through to canvas
+            if (gameScene && gameScene.input) {
+                gameScene.input.enabled = false;
+                setTimeout(() => { if (gameScene && gameScene.input) gameScene.input.enabled = true; }, 200);
+            }
+        }
+
+        // ==========================================
+        //   POLICE SCREEN
+        // ==========================================
+        function showPoliceScreen() {
+            const levelData = LEVELS[currentLevelIndex];
+            const errText = levelData.errorText || 'בחרת את הרכב הלא נכון. בדקו את חוקי הקדימה ונסו שוב.';
+            document.getElementById('police-error-text').innerHTML = errText;
+            document.getElementById('police-screen').classList.add('show');
+        }
+        function retryCurrentCar() {
+            document.getElementById('police-screen').classList.remove('show');
+            // Disable Phaser input briefly to prevent click-through to car below
+            if (gameScene && gameScene.input) {
+                gameScene.input.enabled = false;
+                setTimeout(() => { if (gameScene && gameScene.input) gameScene.input.enabled = true; }, 200);
+            }
+            startTimer();
+            currentPhase = 'select';
+            // Reset only the current car being driven (or the wrongly selected one)
+            // Cars already successfully moved (movedCars) stay as-is
+            const levelData = LEVELS[currentLevelIndex];
+            const currentCar = drivingCar;
+            drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0;
+            drivingKey = null;
+            isDraggingB = false;
+            waitingForLane = false;
+            laneOptions = null;
+            laneCommitted = false;
+            clearForkUI();
+            levelData.cars.forEach(cd => {
+                const car = carsMap[cd.id];
+                if (!car) return;
+                if (car.hasMoved) return; // already completed - leave in place
+                // Reset this car to its original position
+                car.x = cd.x; car.y = cd.y;
+                car.rotation = Phaser.Math.DegToRad(cd.angle);
+                if (car.pathFollower) car.pathFollower.t = 0;
+                car.setTint(0xffffff);
+                car.setInteractive({ cursor: 'pointer', useHandCursor: true });
+            });
+            setTimeout(startPhaseSelect, 150);
+        }
+        function showRulesFromPolice() {
+            document.getElementById('police-screen').classList.remove('show');
+            showRulesModal();
+        }
+
+        // ==========================================
+        //   RULES MODAL
+        // ==========================================
+        function showRulesModal() {
+            const levelData = LEVELS[currentLevelIndex];
+            const rules = levelData.rules && levelData.rules.length > 0
+                ? levelData.rules
+                : ['[חוקי עזר יצורפו בקרוב]'];
+            const introEl = document.getElementById('rules-intro');
+            const listEl  = document.getElementById('rules-list');
+            introEl.textContent = 'לא יודעים מה לעשות? שמנו לכם פה את חוקי העזר המדויקים שלפיהם תדעו את התשובות';
+            introEl.style.display = 'block';
+            listEl.innerHTML = rules.map(r => `<li>${r}</li>`).join('');
+            document.getElementById('rules-modal').classList.add('show');
+        }
+        function closeRulesModal() {
+            document.getElementById('rules-modal').classList.remove('show');
+        }
+    </script>
+</body>
+</html>
