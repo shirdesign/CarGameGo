@@ -24,15 +24,24 @@ function car_game_shortcode() {
 	}
 
 	// ── Strip outer document structure (keep only what goes inside <body>) ──
-	// Remove everything up to and including <body ...>
 	$html = preg_replace( '/^.*?<body[^>]*>/s', '', $html );
-	// Remove </body> and everything after
 	$html = preg_replace( '/<\/body>.*$/s', '', $html );
 
-	// ── Remove Google Fonts <link> and Phaser <script src="..."> ──
-	// (WordPress will enqueue these via wp_enqueue_scripts below)
-	$html = preg_replace( '/<link[^>]*googleapis\.com[^>]*>/i', '', $html );
-	$html = preg_replace( '/<script[^>]*phaser[^>]*>\s*<\/script>/i', '', $html );
+	// ── Remove file-protocol warning (never relevant inside WordPress) ──
+	$html = preg_replace( '/<div id="file-protocol-msg">.*?<\/div>/s', '', $html );
+	$html = preg_replace( '/if\s*\(window\.location\.protocol\s*===\s*[\'"]file:[\'"][^}]+\}/s', '', $html );
+
+	// ── Neutralise game CSS rules that leak into the WP page ──
+	// The game styles body/html as a flex centering wrapper; in WP that breaks the whole page.
+	$reset_css  = '<style id="car-game-wp-compat">' . "\n";
+	$reset_css .= 'body { display: block !important; background-color: revert !important;';
+	$reset_css .= ' padding: revert !important; min-height: revert !important;';
+	$reset_css .= ' flex-direction: unset !important; justify-content: unset !important;';
+	$reset_css .= ' align-items: unset !important; touch-action: unset !important; }' . "\n";
+	$reset_css .= 'html { overflow-x: revert !important; }' . "\n";
+	$reset_css .= '</style>' . "\n";
+	// Inject the reset immediately after the closing </style> of the game CSS block
+	$html = preg_replace( '/<\/style>/', '</style>' . $reset_css, $html, 1 );
 
 	// ── Fix static asset paths (HTML attributes) ──
 	$html = str_replace( 'src="images/', 'src="' . esc_url( $plugin_url ) . 'images/', $html );
@@ -88,30 +97,6 @@ function car_game_shortcode() {
 	);
 
 	return $html;
-}
-
-// ─── Enqueue Phaser + Google Fonts on the front-end ─────────────────────────
-
-add_action( 'wp_enqueue_scripts', 'car_game_enqueue' );
-
-function car_game_enqueue() {
-	global $post;
-	if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'car_game' ) ) {
-		return;
-	}
-	wp_enqueue_style(
-		'car-game-fonts',
-		'https://fonts.googleapis.com/css2?family=Varela+Round&display=swap',
-		[],
-		null
-	);
-	wp_enqueue_script(
-		'phaser',
-		'https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js',
-		[],
-		'3.60.0',
-		true
-	);
 }
 
 // ─── AJAX: save levels (admins only) ────────────────────────────────────────
