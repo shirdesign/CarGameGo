@@ -10,93 +10,34 @@
 defined( 'ABSPATH' ) || exit;
 
 // ─── Shortcode: [car_game] ────────────────────────────────────────────────────
+//
+// Renders the game inside an iframe pointing to game-frame.php.
+// Isolation prevents CSS/JS conflicts with the WordPress theme.
 
 add_shortcode( 'car_game', 'car_game_shortcode' );
 
 function car_game_shortcode() {
-	$plugin_url  = plugin_dir_url( __FILE__ );
-	$plugin_path = plugin_dir_path( __FILE__ );
+	$frame_url = plugin_dir_url( __FILE__ ) . 'game-frame.php';
 
-	// ── Read source HTML ──
-	$html = file_get_contents( $plugin_path . 'index.html' );
-	if ( ! $html ) {
-		return '<p style="color:red">Car Game: לא נמצא index.html בתיקיית הפלאגין.</p>';
-	}
+	// Responsive wrapper: full width, height auto-sized by the iframe via postMessage.
+	$out  = '<div id="car-game-embed" style="width:100%;line-height:0;">';
+	$out .= '<iframe id="car-game-iframe"';
+	$out .= ' src="' . esc_url( $frame_url ) . '"';
+	$out .= ' style="width:100%;height:750px;border:none;display:block;"';
+	$out .= ' scrolling="no" allowfullscreen';
+	$out .= '></iframe>';
+	$out .= '</div>';
 
-	// ── Strip outer document structure (keep only what goes inside <body>) ──
-	$html = preg_replace( '/^.*?<body[^>]*>/s', '', $html );
-	$html = preg_replace( '/<\/body>.*$/s', '', $html );
+	// Resize iframe to match the game's actual height (game sends postMessage on resize)
+	$out .= '<script>';
+	$out .= 'window.addEventListener("message",function(e){';
+	$out .= 'if(e.data&&e.data.type==="car-game-height"){';
+	$out .= 'var f=document.getElementById("car-game-iframe");';
+	$out .= 'if(f)f.style.height=e.data.height+"px";';
+	$out .= '}});';
+	$out .= '</script>';
 
-	// ── Remove file-protocol warning (never relevant inside WordPress) ──
-	$html = preg_replace( '/<div id="file-protocol-msg">.*?<\/div>/s', '', $html );
-	$html = preg_replace( '/if\s*\(window\.location\.protocol\s*===\s*[\'"]file:[\'"][^}]+\}/s', '', $html );
-
-	// ── Neutralise game CSS rules that leak into the WP page ──
-	// The game styles body/html as a flex centering wrapper; in WP that breaks the whole page.
-	$reset_css  = '<style id="car-game-wp-compat">' . "\n";
-	$reset_css .= 'body { display: block !important; background-color: revert !important;';
-	$reset_css .= ' padding: revert !important; min-height: revert !important;';
-	$reset_css .= ' flex-direction: unset !important; justify-content: unset !important;';
-	$reset_css .= ' align-items: unset !important; touch-action: unset !important; }' . "\n";
-	$reset_css .= 'html { overflow-x: revert !important; }' . "\n";
-	$reset_css .= '</style>' . "\n";
-	// Inject the reset immediately after the closing </style> of the game CSS block
-	$html = preg_replace( '/<\/style>/', '</style>' . $reset_css, $html, 1 );
-
-	// ── Fix static asset paths (HTML attributes) ──
-	$html = str_replace( 'src="images/', 'src="' . esc_url( $plugin_url ) . 'images/', $html );
-
-	// ── Fix CSS url() references for background images ──
-	$html = str_replace( "url('images/", "url('" . esc_url( $plugin_url ) . 'images/', $html );
-
-	// ── Inject JS variables before the first <script> tag ──
-	$save_url   = esc_url( admin_url( 'admin-ajax.php' ) ) . '?action=car_game_save_levels';
-	$js_inject  = '<script>' . "\n";
-	$js_inject .= 'window.CAR_GAME_BASE_URL = ' . wp_json_encode( $plugin_url ) . ';' . "\n";
-	$js_inject .= 'window.CAR_GAME_SAVE_URL = ' . wp_json_encode( $save_url ) . ';' . "\n";
-	$js_inject .= '</script>' . "\n";
-	$html = preg_replace( '/<script>/', $js_inject . '<script>', $html, 1 );
-
-	// ── Fix JS: fetch('levels.json') ──
-	$html = str_replace(
-		"fetch('levels.json')",
-		"fetch(window.CAR_GAME_BASE_URL+'levels.json')",
-		$html
-	);
-
-	// ── Fix Phaser image loading (uses relative paths internally) ──
-	$html = str_replace(
-		"this.load.image(src.split('/').pop(), src)",
-		"this.load.image(src.split('/').pop(), window.CAR_GAME_BASE_URL+src)",
-		$html
-	);
-	$html = str_replace(
-		"'images/background-junction.png', 'images/background-junction.png'",
-		"'background-junction.png', window.CAR_GAME_BASE_URL+'images/background-junction.png'",
-		$html
-	);
-	foreach ( [ 'red', 'blue', 'yellow', 'grey', 'orange', 'green' ] as $color ) {
-		$html = str_replace(
-			"this.load.image('{$color}',",
-			"this.load.image('{$color}', window.CAR_GAME_BASE_URL+",
-			$html
-		);
-	}
-	// turquoise uses a typo filename
-	$html = str_replace(
-		"this.load.image('turquoise', 'images/turqize.png')",
-		"this.load.image('turquoise', window.CAR_GAME_BASE_URL+'images/turqize.png')",
-		$html
-	);
-
-	// ── Fix solution image path (shown after each level) ──
-	$html = str_replace(
-		'img.src = levelData.solutionImage;',
-		'img.src = (window.CAR_GAME_BASE_URL||"")+levelData.solutionImage;',
-		$html
-	);
-
-	return $html;
+	return $out;
 }
 
 // ─── AJAX: save levels (admins only) ────────────────────────────────────────
