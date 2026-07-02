@@ -1987,7 +1987,7 @@
             const isWrong    = !drivingDir || !expectedDir || drivingDir !== expectedDir;
 
             if (isWrong) {
-                // Wrong destination - shake, snap back, then show police screen
+                // Wrong destination - show error immediately, then shake and snap back
                 const car      = drivingCar;
                 const path     = drivingPath;
                 const carData  = levelData.cars.find(c => c.id === car.name);
@@ -1995,6 +1995,15 @@
                 drivingCar = null; drivingPath = null; drivingDir = null; drivingT = 0; drivingKey = null;
                 waitingForLane = false; laneOptions = null; laneCommitted = false; clearForkUI();
                 car.disableInteractive();
+
+                // Show error screen immediately so there's no confusing delay
+                const errText = (wrongDir && wrongDir.endsWith('_wrong'))
+                    ? (levelData.errorText || 'נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.')
+                    : 'נכנסתם לצומת בכיוון הלא נכון! נסו שוב, הפעם בכיוון הנכון.';
+                document.getElementById('police-error-text').innerHTML = errText;
+                document.getElementById('police-screen').classList.add('show');
+
+                // Shake and snap car back in background
                 gameScene.tweens.add({
                     targets: car, x: car.x + 8,
                     duration: 60, yoyo: true, repeat: 3,
@@ -2005,11 +2014,6 @@
                         car.pathFollower.t = 0;
                         car.setTint(0xffffff);
                         car.setInteractive({ cursor: 'pointer', useHandCursor: true });
-                        const errText = (wrongDir && wrongDir.endsWith('_wrong'))
-                            ? (levelData.errorText || 'נכנסתם לנתיב הלא נכון! נסו לפנות שוב בצומת, הפעם אל נקודת היעד הנכונה.')
-                            : 'נכנסתם לצומת בכיוון הלא נכון! נסו שוב, הפעם בכיוון הנכון.';
-                        document.getElementById('police-error-text').innerHTML = errText;
-                        document.getElementById('police-screen').classList.add('show');
                     }
                 });
                 return;

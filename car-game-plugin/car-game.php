@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Car Game Go – משחק הצמתים
  * Description: משחק תנועה אינטראקטיבי. הוסיפו [car_game] בכל עמוד.
- * Version:     2.0
+ * Version:     2.1
  * Author:      המפצחות
  * Text Domain: car-game
  */
